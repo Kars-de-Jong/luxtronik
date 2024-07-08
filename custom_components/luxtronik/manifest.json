@@ -6,10 +6,10 @@
   "config_flow": true,
   "iot_class": "local_polling",
   "documentation": "https://www.home-assistant.io/integrations/luxtronik",
-  "issue_tracker": "https://github.com/BenPru/luxtronik/issues",
+  "issue_tracker": "https://github.com/Kars-de-Jong/luxtronik/issues",
   "dependencies": [],
   "after_dependencies": ["http"],
-  "codeowners": ["@bouni", "@benpru"],
+  "codeowners": ["@bouni", "@benpru", "@kars-de-jong"],
   "requirements": ["luxtronik==0.3.14", "getmac>=0.8.2"],
   "homeassistant": "2022.9.0",
   "dhcp": [
