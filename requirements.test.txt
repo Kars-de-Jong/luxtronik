@@ -1,0 +1,6 @@
+flake8
+pytest
+pytest-cov
+pytest-homeassistant-custom-component
+luxtronik==0.3.14
+getmac>=0.8.2
