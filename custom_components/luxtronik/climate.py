@@ -115,7 +115,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
     _attr_current_temperature = None
     _attr_supported_features = SUPPORT_FLAGS
     _attr_temperature_unit = TEMP_CELSIUS
-    _attr_hvac_mode = HVACMode.HVAC_MODE_OFF
+    _attr_hvac_mode = HVACMode.OFF
     _attr_hvac_modes = OPERATION_LIST
     _attr_hvac_action = HVACAction.IDLE
     _attr_preset_mode = PRESET_NONE
