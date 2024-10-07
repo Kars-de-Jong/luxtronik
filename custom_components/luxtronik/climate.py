@@ -40,7 +40,7 @@ from .helpers.helper import get_sensor_text
 # endregion Imports
 
 # region Constants
-SUPPORT_FLAGS: Final = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE
+SUPPORT_FLAGS: Final = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
 OPERATION_LIST: Final = [HVACMode.AUTO, HVACMode.OFF]
 
 MIN_TEMPERATURE: Final = 40
