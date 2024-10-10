@@ -284,12 +284,12 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
         return True
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self) -> HVACMode:
         """Return the current operation mode."""
         self._attr_hvac_mode = self.__get_hvac_mode(self.hvac_action)
         return self._attr_hvac_mode
 
-    async def async_set_hvac_mode(self, hvac_mode: str) -> None:
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new operation mode."""
         if self._attr_hvac_mode == hvac_mode:
             return
@@ -314,7 +314,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
             return HVACMode.OFF
         return HVACMode.AUTO
 
-    def __get_luxmode(self, hvac_mode: str, preset_mode: str) -> LuxMode:
+    def __get_luxmode(self, hvac_mode: HVACMode, preset_mode: str) -> LuxMode:
         if hvac_mode == HVACMode.OFF:
             return LuxMode.off
         # elif self._control_mode_home_assistant and self.hvac_action in [CURRENT_HVAC_OFF, CURRENT_HVAC_IDLE]:
