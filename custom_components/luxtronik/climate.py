@@ -8,7 +8,7 @@ from homeassistant.components.climate.const import HVACAction, HVACMode, PRESET_
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.components.water_heater import ATTR_TEMPERATURE
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ENTITY_CATEGORIES, STATE_UNAVAILABLE, STATE_UNKNOWN, TEMP_CELSIUS
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, TEMP_CELSIUS
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -81,7 +81,7 @@ async def async_setup_entry(
         entities += [
             LuxtronikHeatingThermostat(
                 luxtronik, deviceInfoHeating, name=text_heating, control_mode_home_assistant=control_mode_home_assistant,
-                current_temperature_sensor=ha_sensor_indoor_temperature, entity_category=None)
+                current_temperature_sensor=ha_sensor_indoor_temperature)
         ]
 
     deviceInfoDomesticWater = hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"]
@@ -90,7 +90,7 @@ async def async_setup_entry(
         entities += [
             LuxtronikDomesticWaterThermostat(
                 luxtronik, deviceInfoDomesticWater, name=text_domestic_water, control_mode_home_assistant=control_mode_home_assistant,
-                current_temperature_sensor=LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE, entity_category=None)
+                current_temperature_sensor=LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE)
         ]
 
     deviceInfoCooling = hass.data[f"{DOMAIN}_DeviceInfo_Cooling"]
@@ -99,7 +99,7 @@ async def async_setup_entry(
         entities += [
             LuxtronikCoolingThermostat(
                 luxtronik, deviceInfoCooling, name=text_cooling, control_mode_home_assistant=control_mode_home_assistant,
-                current_temperature_sensor=LUX_SENSOR_OUTDOOR_TEMPERATURE, entity_category=None)
+                current_temperature_sensor=LUX_SENSOR_OUTDOOR_TEMPERATURE)
         ]
 
     async_add_entities(entities)
@@ -135,7 +135,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
     _last_lux_mode: LuxMode = None
     _last_hvac_action = None
 
-    def __init__(self, luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo, name: str, control_mode_home_assistant: bool, current_temperature_sensor: str, entity_category: ENTITY_CATEGORIES = None):
+    def __init__(self, luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo, name: str, control_mode_home_assistant: bool, current_temperature_sensor: str):
         self._luxtronik = luxtronik
         self._attr_device_info = deviceInfo
         self._attr_name = name
@@ -143,7 +143,6 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
         self._current_temperature_sensor = current_temperature_sensor
         self.entity_id = ENTITY_ID_FORMAT.format(
             f"{DOMAIN}_{self._attr_unique_id}")
-        self._attr_entity_category = entity_category
     # endregion Properties / Init
 
     # region Temperatures
