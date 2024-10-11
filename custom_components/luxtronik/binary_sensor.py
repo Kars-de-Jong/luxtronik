@@ -23,8 +23,8 @@ from homeassistant.util import slugify
 
 from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
                     CONF_CALCULATIONS, CONF_GROUP, CONF_INVERT_STATE,
-                    CONF_LANGUAGE_SENSOR_NAMES, CONF_PARAMETERS,
-                    CONF_VISIBILITIES, DEFAULT_DEVICE_CLASS, DEVICE_CLASSES,
+                    CONF_PARAMETERS, CONF_VISIBILITIES,
+                    DEFAULT_DEVICE_CLASS, DEVICE_CLASSES,
                     DOMAIN, LOGGER,
                     LUX_BINARY_SENSOR_ADDITIONAL_CIRCULATION_PUMP,
                     LUX_BINARY_SENSOR_CIRCULATION_PUMP_HEATING,
@@ -363,8 +363,7 @@ class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
         self._attr_entity_category = entity_category
         self._invert = invert_state
         self._attr_entity_registry_enabled_default = entity_registry_enabled_default
-        self._attr_extra_state_attributes = { ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: sensor_key }
-
+        self._attr_extra_state_attributes = {ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: sensor_key}
 
     @property
     def is_on(self):
