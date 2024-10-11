@@ -24,10 +24,7 @@ from .const import (
     SERVICE_WRITE_SCHEMA,
 )
 from .helpers.helper import get_sensor_text
-from .helpers.lux_helper import (
-    get_manufacturer_by_model,
-    get_manufacturer_firmware_url_by_model,
-)
+from .helpers.lux_helper import get_manufacturer_firmware_url_by_model
 from .luxtronik_device import LuxtronikDevice
 
 # endregion Imports
@@ -35,6 +32,7 @@ from .luxtronik_device import LuxtronikDevice
 # region Constants
 LuxLogger.setLevel(level="WARNING")
 # endregion Constants
+
 
 @dataclass
 class LuxtronikEntityDescription(EntityDescription):
@@ -140,7 +138,7 @@ def setup_internal(hass, data, conf):
         name=text_domestic_water,
         manufacturer=luxtronik.manufacturer,
         model=luxtronik.model,
-        entry_type = None,
+        entry_type=None,
         hw_version=None,
         sw_version=None,
         connections=None,
@@ -152,7 +150,7 @@ def setup_internal(hass, data, conf):
         name=text_heating,
         manufacturer=luxtronik.manufacturer,
         model=luxtronik.model,
-        entry_type = None,
+        entry_type=None,
         hw_version=None,
         sw_version=None,
         connections=None,
@@ -165,7 +163,7 @@ def setup_internal(hass, data, conf):
             name=text_cooling,
             manufacturer=luxtronik.manufacturer,
             model=luxtronik.model,
-            entry_type = None,
+            entry_type=None,
             hw_version=None,
             sw_version=None,
             connections=None,
@@ -218,18 +216,18 @@ def build_device_info(
         configuration_url=f"http://{ip_host}/",
         connections=None,
 
-        #default_manufacturer="Alpha Innotec",
-        #default_model="",
-        #default_name=name,
-        
-        entry_type = None,
+        # default_manufacturer="Alpha Innotec",
+        # default_model="",
+        # default_name=name,
+
+        entry_type=None,
         hw_version=None,
         identifiers={
-            (  DOMAIN, f"{luxtronik.unique_id}_heatpump"  )
-        },        
+            (DOMAIN, f"{luxtronik.unique_id}_heatpump")
+        },
         manufacturer=luxtronik.manufacturer,
         model=luxtronik.model,
-        name=f"{name} {luxtronik.serial_number}",        
+        name=f"{name} {luxtronik.serial_number}",
 
         suggested_area="Utility room",
         sw_version=luxtronik.get_value("calculations.ID_WEB_SoftStand"),
