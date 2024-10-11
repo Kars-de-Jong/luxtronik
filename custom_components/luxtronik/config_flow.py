@@ -6,8 +6,6 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.components.dhcp import HOSTNAME  # , DhcpServiceInfo
-from homeassistant.components.dhcp import IP_ADDRESS
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
@@ -36,7 +34,7 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     _discovery_host = None
     _discovery_port = None
     _discovery_schema = None
-    
+
     _sensor_prefix = DOMAIN
 
     def _get_schema(self):
@@ -123,7 +121,7 @@ class LuxtronikOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle a Luxtronik options flow."""
 
     _sensor_prefix = DOMAIN
-    
+
     def __init__(self, config_entry):
         """Initialize."""
         self.config_entry = config_entry
