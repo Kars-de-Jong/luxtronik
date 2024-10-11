@@ -3,9 +3,7 @@
 import asyncio
 import re
 import threading
-import time
 
-from homeassistant.core import HomeAssistant
 from homeassistant.util import Throttle
 from luxtronik import Luxtronik as Lux
 
@@ -13,7 +11,6 @@ from .const import (
     CONF_CALCULATIONS,
     CONF_PARAMETERS,
     CONF_VISIBILITIES,
-    DOMAIN,
     LOGGER,
     LUX_DETECT_SOLAR_SENSOR,
     LUX_MK_SENSORS,
@@ -82,7 +79,7 @@ class LuxtronikDevice:
         except Exception as err:
             LOGGER.warning(f"Sensor id not found: {group}.{sensor_id}", err, exc_info=True)
         return sensor
- 
+
     @property
     def serial_number(self) -> str:
         """Return the serial number."""
@@ -144,38 +141,36 @@ class LuxtronikDevice:
         coolingMk = []
         for Mk in LUX_MK_SENSORS:
             sensor_value = self.get_value(Mk)
-            #LOGGER.info(f"{Mk} = {sensor_value}")
+            # LOGGER.info(f"{Mk} = {sensor_value}")
             if sensor_value in [LuxMkTypes.cooling.value,
                                 LuxMkTypes.heating_cooling.value]:
                 coolingMk = coolingMk + [Mk]
-        
-        LOGGER.info(f"CoolingMk = {coolingMk}")        
+
+        LOGGER.info(f"CoolingMk = {coolingMk}")
         return coolingMk
-        
+
     def detect_solar_present(self) -> bool:
         """Detect and returns True if solar is present."""
         return (
             bool(self.get_value(LUX_DETECT_SOLAR_SENSOR))
             or self.get_value("parameters.ID_BSTD_Solar") > 0.01
-            or 
+            or
             (bool(self.get_value("visibilities.ID_Visi_Temp_Solarkoll"))
-            and float(self.get_value("calculations.ID_WEB_Temperatur_TSK"))
-            != 5.0
-            )
-            or 
+             and float(self.get_value("calculations.ID_WEB_Temperatur_TSK"))
+             != 5.0
+             )
+            or
             (bool(self.get_value("visibilities.ID_Visi_Temp_Solarsp"))
-            and float(self.get_value("calculations.ID_WEB_Temperatur_TSS"))
-            != 150.0
-            )
+             and float(self.get_value("calculations.ID_WEB_Temperatur_TSS"))
+             != 150.0
+             )
         )
 
-        
-    def detect_cooling_present(self):  
+    def detect_cooling_present(self):
         """ returns True if Cooling is present """
         CoolingPresent = (len(self.detect_cooling_Mk()) > 0)
-        LOGGER.info(f"CoolingPresent = {CoolingPresent}") 
+        LOGGER.info(f"CoolingPresent = {CoolingPresent}")
         return CoolingPresent
-        
 
     def detect_cooling_target_temperature_sensor(self):
         """ if only 1 MK parameter related to cooling is returned
