@@ -8,7 +8,7 @@ from homeassistant.components.climate.const import HVACAction, HVACMode, PRESET_
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.components.water_heater import ATTR_TEMPERATURE
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, TEMP_CELSIUS
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -114,7 +114,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
     _attr_target_temperature = None
     _attr_current_temperature = None
     _attr_supported_features = SUPPORT_FLAGS
-    _attr_temperature_unit = TEMP_CELSIUS
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_hvac_mode = HVACMode.OFF
     _attr_hvac_modes = OPERATION_LIST
     _attr_hvac_action = HVACAction.IDLE
