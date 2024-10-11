@@ -44,7 +44,7 @@ CONF_SAFE: Final = "safe"
 CONF_LOCK_TIMEOUT: Final = "lock_timeout"
 CONF_UPDATE_IMMEDIATELY_AFTER_WRITE: Final = "update_immediately_after_write"
 
-CONF_PARAMETERS:   Final = "parameters"
+CONF_PARAMETERS: Final = "parameters"
 CONF_CALCULATIONS: Final = "calculations"
 CONF_VISIBILITIES: Final = "visibilities"
 
@@ -91,6 +91,7 @@ LANGUAGES: Final = Enum(LANG_EN, LANG_DE)
 LANGUAGES_SENSOR_NAMES: Final = [LANG_EN, LANG_DE]
 # endregion Conf
 
+
 @dataclass
 class LuxtronikSensorEntityDescription(SensorEntityDescription):
     sensor_key: str = None
@@ -107,7 +108,7 @@ ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION: Final = "Last thermal desi
 
 MIN_TIME_BETWEEN_UPDATES: Final = timedelta(seconds=10)
 
-PRESET_AUTO:              Final = 'automatic'
+PRESET_AUTO: Final = 'automatic'
 PRESET_SECOND_HEATSOURCE: Final = "second_heatsource"
 
 # region Lux Modes
@@ -123,7 +124,6 @@ class LuxMode(Enum):
     holidays: Final = "Holidays"
 
 
-    
 # endregion Lux Modes
 
 
@@ -136,7 +136,7 @@ LUX_STATUS_DEFROST: Final = "defrost"  # 4
 LUX_STATUS_NO_REQUEST: Final = "no request"  # 5
 LUX_STATUS_HEATING_EXTERNAL_SOURCE: Final = "heating external source"  # 6
 LUX_STATUS_COOLING: Final = "cooling"  # 7
-LUX_STATUS_THERMAL_DESINFECTION: Final = "thermal desinfection"  
+LUX_STATUS_THERMAL_DESINFECTION: Final = "thermal desinfection"
 
 LUX_STATUS_NONE: Final = "None"
 LUX_STATUS_UNKNOWN: Final = "unknown"
@@ -179,7 +179,7 @@ LUX_STATE_ICON_MAP: Final[dict[str, str]] = {
     LUX_STATUS_SWIMMING_POOL_SOLAR: "mdi:pool",
     LUX_STATUS_EVU: "mdi:power-plug-off",
     LUX_STATUS_DEFROST: "mdi:car-defrost-rear",
-    LUX_STATUS_NO_REQUEST: "mdi:heat-pump-outline", #"mdi:radiator-disabled",
+    LUX_STATUS_NO_REQUEST: "mdi:heat-pump-outline",  # "mdi:radiator-disabled",
     LUX_STATUS_HEATING_EXTERNAL_SOURCE: "mdi:patio-heater",
     LUX_STATUS_COOLING: "mdi:air-conditioner",
 }
@@ -190,7 +190,7 @@ ICON_OFF = "mdi:circle-outline"
 
 
 # region Luxtronik Sensor ids
-LUX_SENSOR_STATUS:  Final = "calculations.ID_WEB_WP_BZ_akt"
+LUX_SENSOR_STATUS: Final = "calculations.ID_WEB_WP_BZ_akt"
 LUX_SENSOR_STATUS1: Final = "calculations.ID_WEB_HauptMenuStatus_Zeile1"
 LUX_SENSOR_STATUS3: Final = "calculations.ID_WEB_HauptMenuStatus_Zeile3"
 
@@ -198,25 +198,25 @@ LUX_SENSOR_REMOTE_MAINTENANCE: Final = "parameters.ID_Einst_Fernwartung_akt"
 LUX_SENSOR_PUMP_OPTIMIZATION: Final = "parameters.ID_Einst_Popt_akt"
 LUX_SENSOR_EFFICIENCY_PUMP: Final = "parameters.ID_Einst_Effizienzpumpe_akt"
 
-LUX_SENSOR_OUTDOOR_TEMPERATURE:              Final = "calculations.ID_WEB_Temperatur_TA"
+LUX_SENSOR_OUTDOOR_TEMPERATURE: Final = "calculations.ID_WEB_Temperatur_TA"
 
-LUX_SENSOR_PUMP_OPTIMIZATION_TIME:           Final = "parameters.ID_Einst_Popt_Nachlauf_akt"
-LUX_SENSOR_HEATING_MAXIMUM_CIRCULATION_PUMP_SPEED:  Final = "parameters.ID_Einst_P155_PumpHeat_Max"
-LUX_SENSOR_HEATING_TARGET_CORRECTION:        Final = "parameters.ID_Einst_WK_akt"
-LUX_SENSOR_HEATING_ROOM_TEMPERATURE_IMPACT_FACTOR:  Final = "parameters.ID_RBE_Einflussfaktor_RT_akt"
-LUX_SENSOR_HEATING_THRESHOLD:                Final = "parameters.ID_Einst_Heizgrenze"
-LUX_SENSOR_HEATING_THRESHOLD_TEMPERATURE:    Final = "parameters.ID_Einst_Heizgrenze_Temp"
+LUX_SENSOR_PUMP_OPTIMIZATION_TIME: Final = "parameters.ID_Einst_Popt_Nachlauf_akt"
+LUX_SENSOR_HEATING_MAXIMUM_CIRCULATION_PUMP_SPEED: Final = "parameters.ID_Einst_P155_PumpHeat_Max"
+LUX_SENSOR_HEATING_TARGET_CORRECTION: Final = "parameters.ID_Einst_WK_akt"
+LUX_SENSOR_HEATING_ROOM_TEMPERATURE_IMPACT_FACTOR: Final = "parameters.ID_RBE_Einflussfaktor_RT_akt"
+LUX_SENSOR_HEATING_THRESHOLD: Final = "parameters.ID_Einst_Heizgrenze"
+LUX_SENSOR_HEATING_THRESHOLD_TEMPERATURE: Final = "parameters.ID_Einst_Heizgrenze_Temp"
 LUX_SENSOR_HEATING_MIN_FLOW_OUT_TEMPERATURE: Final = "parameters.ID_Einst_Minimale_Ruecklaufsolltemperatur"
 LUX_SENSOR_HEATING_CIRCUIT_CURVE1_TEMPERATURE: Final = "parameters.ID_Einst_HzHwHKE_akt"
 LUX_SENSOR_HEATING_CIRCUIT_CURVE2_TEMPERATURE: Final = "parameters.ID_Einst_HzHKRANH_akt"
 LUX_SENSOR_HEATING_CIRCUIT_CURVE_NIGHT_TEMPERATURE: Final = "parameters.ID_Einst_HzHKRABS_akt"
-LUX_SENSOR_MODE_HEATING:                     Final = "parameters.ID_Ba_Hz_akt"
+LUX_SENSOR_MODE_HEATING: Final = "parameters.ID_Ba_Hz_akt"
 
-LUX_SENSOR_COOLING_THRESHOLD:                Final = "parameters.ID_Einst_KuehlFreig_akt"
-LUX_SENSOR_COOLING_START_DELAY:              Final = "parameters.ID_Einst_Kuhl_Zeit_Ein_akt"
-LUX_SENSOR_COOLING_STOP_DELAY:               Final = "parameters.ID_Einst_Kuhl_Zeit_Aus_akt"
-LUX_SENSOR_COOLING_TARGET:                   Final = "parameters.ID_Sollwert_KuCft2_akt"
-LUX_SENSOR_MODE_COOLING:                     Final = "parameters.ID_Einst_BA_Kuehl_akt"
+LUX_SENSOR_COOLING_THRESHOLD: Final = "parameters.ID_Einst_KuehlFreig_akt"
+LUX_SENSOR_COOLING_START_DELAY: Final = "parameters.ID_Einst_Kuhl_Zeit_Ein_akt"
+LUX_SENSOR_COOLING_STOP_DELAY: Final = "parameters.ID_Einst_Kuhl_Zeit_Aus_akt"
+LUX_SENSOR_COOLING_TARGET: Final = "parameters.ID_Sollwert_KuCft2_akt"
+LUX_SENSOR_MODE_COOLING: Final = "parameters.ID_Einst_BA_Kuehl_akt"
 
 LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE: Final = (
     "calculations.ID_WEB_Temperatur_TBW"
@@ -245,14 +245,15 @@ LUX_SENSORS_MODE: Final[list[str]] = [
 ]
 # endregion Luxtronik Sensor ids
 
-LUX_DETECT_SOLAR_SENSOR: Final = "visibilities.ID_Visi_Solar" 
+LUX_DETECT_SOLAR_SENSOR: Final = "visibilities.ID_Visi_Solar"
 LUX_MK_SENSORS = ['parameters.ID_Einst_MK1Typ_akt',
-                'parameters.ID_Einst_MK2Typ_akt',
-                'parameters.ID_Einst_MK3Typ_akt']
-                
+                  'parameters.ID_Einst_MK2Typ_akt',
+                  'parameters.ID_Einst_MK3Typ_akt']
+
 DOWNLOAD_PORTAL_URL: Final = (
     "https://www.heatpump24.com/software/fetchSoftware.php?softwareID="
 )
+
 
 class LuxMkTypes(Enum):
     off: Final = 0
@@ -260,10 +261,11 @@ class LuxMkTypes(Enum):
     load: Final = 2
     cooling: Final = 3
     heating_cooling: Final = 4
-    
-LUX_MODELS_AlphaInnotec = ['LWP','LWV','MSW','SWC','SWP']
-LUX_MODELS_Novelan      = ['BW','LA','LD','LI','SI','ZLW']
-LUX_MODELS_Other        = ['CB','CI','CN','CS']
+
+
+LUX_MODELS_AlphaInnotec = ['LWP', 'LWV', 'MSW', 'SWC', 'SWP']
+LUX_MODELS_Novelan = ['BW', 'LA', 'LD', 'LI', 'SI', 'ZLW']
+LUX_MODELS_Other = ['CB', 'CI', 'CN', 'CS']
 
 GLOBAL_STATUS_SENSOR_TYPES: tuple[LuxtronikSensorEntityDescription, ...] = (
     LuxtronikSensorEntityDescription(
@@ -340,7 +342,7 @@ GLOBAL_SENSOR_TYPES: tuple[LuxtronikSensorEntityDescription, ...] = (
         state_class=STATE_CLASS_MEASUREMENT,
         # unit_of_measurement=TEMP_CELSIUS,
         sensor_key="calculations.ID_WEB_RBE_RT_Ist",
-    ),    
+    ),
     LuxtronikSensorEntityDescription(
         key="outdoor_temperature_average",
         # name=f"{text_average} {text_outdoor} {text_temp}",
@@ -381,7 +383,7 @@ GLOBAL_SENSOR_TYPES: tuple[LuxtronikSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         sensor_key="calculations.ID_WEB_WMZ_Seit",
     ),
-        LuxtronikSensorEntityDescription(
+    LuxtronikSensorEntityDescription(
         key="current_heat_output",
         # name=f"{text_current_heat_output}",
         icon="mdi:lightning-bolt-circle",
@@ -575,4 +577,3 @@ UNITS: Final = {
     CONF_FREQUENCY: "Hz",
 }
 # endregion Legacy consts
-
