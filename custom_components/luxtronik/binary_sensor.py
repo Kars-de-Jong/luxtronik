@@ -12,8 +12,7 @@ from homeassistant.components.binary_sensor import (DEVICE_CLASS_LOCK,
                                                     BinarySensorEntity)
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
-                                 CONF_SENSORS, ENTITY_CATEGORIES)
+from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID, CONF_SENSORS)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -339,7 +338,6 @@ class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
         icon: str,
         device_class: str,
         state_class: str = None,
-        entity_category: ENTITY_CATEGORIES = None,
         invert_state: bool = False,
         icon_off: str = None,
         entity_registry_enabled_default: bool = True,
@@ -360,7 +358,6 @@ class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
         self._icon_off = icon_off
         self._attr_device_class = device_class
         self._attr_state_class = state_class
-        self._attr_entity_category = entity_category
         self._invert = invert_state
         self._attr_entity_registry_enabled_default = entity_registry_enabled_default
         self._attr_extra_state_attributes = {ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: sensor_key}
