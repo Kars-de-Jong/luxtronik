@@ -65,7 +65,6 @@ async def async_setup_entry(
 
     # Build Sensor names with local language:
     lang = hass.config.language
-    text_temp = get_sensor_text(lang, 'temperature')
 
     deviceInfo = hass.data[f"{DOMAIN}_DeviceInfo"]
     entities = [
@@ -242,7 +241,7 @@ async def async_setup_entry(
             lang, 'cooling_stop_delay_hours')
         text_cooling_target_temperature = get_sensor_text(
             lang, 'cooling_target_temperature')
-            
+
         entities += [
             LuxtronikNumber(luxtronik, deviceInfoCooling,
                             number_key=LUX_SENSOR_COOLING_THRESHOLD,
@@ -269,13 +268,13 @@ async def async_setup_entry(
         LUX_SENSOR_COOLING_TARGET = luxtronik.detect_cooling_target_temperature_sensor()
         entities += [
             LuxtronikNumber(luxtronik, deviceInfoCooling,
-                number_key=LUX_SENSOR_COOLING_TARGET,
-                unique_id='cooling_target_temperature',
-                name=f"{text_cooling_target_temperature}",
-                icon='mdi:snowflake-thermometer',
-                unit_of_measurement=TEMP_CELSIUS,
-                min_value=18.0, max_value=25.0, step=1.0, mode=NumberMode.BOX) 
-        ] if LUX_SENSOR_COOLING_TARGET != None else []
+                            number_key=LUX_SENSOR_COOLING_TARGET,
+                            unique_id='cooling_target_temperature',
+                            name=f"{text_cooling_target_temperature}",
+                            icon='mdi:snowflake-thermometer',
+                            unit_of_measurement=TEMP_CELSIUS,
+                            min_value=18.0, max_value=25.0, step=1.0, mode=NumberMode.BOX)
+        ] if LUX_SENSOR_COOLING_TARGET is not None else []
 
     async_add_entities(entities)
 # endregion Setup
@@ -304,7 +303,7 @@ class LuxtronikNumber(NumberEntity, RestoreEntity):
         mode: Literal["auto", "box", "slider"] = NumberMode.AUTO,
         entity_category: ENTITY_CATEGORIES = None,
         factor: float = None,
-        entity_registry_enabled_default = True,
+        entity_registry_enabled_default=True,
         # *args: Any,
         # **kwargs: Any
     ) -> None:
@@ -335,7 +334,7 @@ class LuxtronikNumber(NumberEntity, RestoreEntity):
         self._attr_entity_category = entity_category
         self._factor = factor
         self._attr_entity_registry_enabled_default = entity_registry_enabled_default
-        self._attr_extra_state_attributes = { ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: number_key }
+        self._attr_extra_state_attributes = {ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: number_key}
 
     @property
     def icon(self):  # -> str | None:
@@ -372,13 +371,14 @@ class LuxtronikNumber(NumberEntity, RestoreEntity):
         self._luxtronik.write(self._number_key.split('.')[1], value)
         # self.schedule_update_ha_state(force_refresh=True)
         self.async_write_ha_state()
-        
+
 #    def set_value(self, value: float) -> None:
 #        """Update the current value."""
 #        if self._factor != 1.0:
 #            value = int(value / self._factor)
 #        self._luxtronik.write(self._number_key.split('.')[1], value)
 #        self.schedule_update_ha_state(force_refresh=True)
+
 
 class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):
     _last_thermal_desinfection: datetime.date = None
