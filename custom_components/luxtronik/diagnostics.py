@@ -78,5 +78,3 @@ async def _async_get_mac_address(hass: HomeAssistant, host: str) -> str | None:
         return None
 
     return device_registry.format_mac(mac_address)
-
-
