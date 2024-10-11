@@ -1,13 +1,9 @@
 """Helper for luxtronik heatpump module."""
 import socket
 
-from ..const import (
-    LOGGER,
-    LUX_MODELS_AlphaInnotec,
-    LUX_MODELS_Novelan,
-    LUX_MODELS_Other    
-    )
-    
+from ..const import LOGGER, LUX_MODELS_AlphaInnotec, LUX_MODELS_Novelan, LUX_MODELS_Other
+
+
 def discover():
     """Broadcast discovery for luxtronik heatpumps."""
 
