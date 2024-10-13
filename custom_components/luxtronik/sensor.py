@@ -945,25 +945,6 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
                 self._attr_extra_state_attributes[key] = self._luxtronik.get_value(value)
 
 
-class LuxtronikLegacySensor(LuxtronikSensor):
-    def __init__(self, set_entity_id: str, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        # self._set_entity_id = set_entity_id
-        # self.entity_id = set_entity_id
-        self._attr_unique_id = set_entity_id
-        # self.unique_id = set_entity_id
-        # self._attr_entity_id = set_entity_id
-
-        # self.domain = "luxtronik"
-        # self.platform_name = "luxtronik"
-        self.entity_namespace = "luxtronik"
-
-    # @property
-    # def entity_id(self):
-    #     """Return the entity_id of the sensor."""
-    #     return self._set_entity_id
-
-
 class LuxtronikIndexStatusSensor(LuxtronikSensor):
     # _min_index = 0
     # _max_index = 4
