@@ -1,8 +1,8 @@
 """Luxtronik device."""
 # region Imports
-import asyncio
 import re
 import threading
+import time
 
 from homeassistant.util import Throttle
 from luxtronik import Luxtronik as Lux
@@ -184,21 +184,21 @@ class LuxtronikDevice:
         LOGGER.info(f"cooling_target_temperature_sensor = '{cooling_target_temperature_sensor}' ")
         return cooling_target_temperature_sensor
 
-    async def write(
+    def write(
         self, parameter, value, use_debounce=True, update_immediately_after_write=False
     ):
         """Write a parameter to the Luxtronik heatpump."""
         self.__ignore_update = True
         if use_debounce:
-            await self.__write_debounced(parameter, value, update_immediately_after_write)
+            self.__write_debounced(parameter, value, update_immediately_after_write)
         else:
-            await self.__write(parameter, value, update_immediately_after_write)
+            self.__write(parameter, value, update_immediately_after_write)
 
     @debounce(3)
-    async def __write_debounced(self, parameter, value, update_immediately_after_write):
+    def __write_debounced(self, parameter, value, update_immediately_after_write):
         self.__write(parameter, value, update_immediately_after_write)
 
-    async def __write(self, parameter, value, update_immediately_after_write):
+    def __write(self, parameter, value, update_immediately_after_write):
         try:
             # TODO: change to "with"
             # with self.lock.acquire_timeout(self._lock_timeout_sec) as lock_result:
@@ -221,7 +221,7 @@ class LuxtronikDevice:
         finally:
             self.lock.release()
             if update_immediately_after_write:
-                asyncio.sleep(5)
+                time.sleep(3)
                 self.read()
             self.__ignore_update = False
             LOGGER.info(

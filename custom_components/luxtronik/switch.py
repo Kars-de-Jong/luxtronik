@@ -159,14 +159,14 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         self._off_state = off_state
         self._attr_extra_state_attributes = {ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: sensor_key}
 
-    async def async_turn_on(self, **kwargs: Any) -> None:
+    def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._luxtronik.write(self._sensor_key.split(
             '.')[1], self._on_state, use_debounce=False,
             update_immediately_after_write=True)
         self.schedule_update_ha_state(force_refresh=True)
 
-    async def async_turn_off(self, **kwargs: Any) -> None:
+    def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._luxtronik.write(self._sensor_key.split(
             '.')[1], self._off_state, use_debounce=False,

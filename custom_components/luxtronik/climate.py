@@ -8,7 +8,7 @@ from homeassistant.components.climate.const import HVACAction, HVACMode, PRESET_
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.components.water_heater import ATTR_TEMPERATURE
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, UnitOfTemperature
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -187,16 +187,16 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
         except ValueError as ex:
             LOGGER.error("Unable to update from sensor: %s", ex)
 
-    async def async_set_temperature(self, **kwargs: Any) -> None:
+    def set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
         changed = False
         self._attr_target_temperature = kwargs[ATTR_TEMPERATURE]
         if self._target_temperature_sensor is not None:
-            await self._luxtronik.write(self._target_temperature_sensor.split('.')[1],
-                                        self._attr_target_temperature, use_debounce=False,
-                                        update_immediately_after_write=True)
+            self._luxtronik.write(self._target_temperature_sensor.split('.')[1],
+                                  self._attr_target_temperature, use_debounce=False,
+                                  update_immediately_after_write=True)
             changed = True
-        if not await self._async_control_heating() and changed:
+        if changed:
             self.schedule_update_ha_state(force_refresh=True)
     # endregion Temperatures
 
@@ -242,45 +242,11 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
             new_hvac_action = HVACAction.IDLE
         if new_hvac_action != self._attr_hvac_action:
             self._attr_hvac_action = new_hvac_action
-            self._async_control_heating()
         if self._last_hvac_action != new_hvac_action:
             self._last_hvac_action = new_hvac_action
             LOGGER.info("climate.hvac_action changed %s status: %s hvac_action: %s",
                         self._attr_unique_id, status, new_hvac_action)
         return new_hvac_action
-
-    async def _async_control_heating(self) -> bool:
-        if not self._control_mode_home_assistant or self._attr_target_temperature is None or self._attr_current_temperature is None:  # Nothing Todo!
-            LOGGER.info("climate._async_control_heating %s break!",
-                        self._attr_unique_id)
-            return False
-        too_cold = self._attr_target_temperature >= self._attr_current_temperature + \
-            self._cold_tolerance
-        too_hot = self._attr_current_temperature >= self._attr_target_temperature + \
-            self._hot_tolerance
-        status = self._luxtronik.get_value(self._status_sensor)
-        if too_hot and status != LuxMode.off.value and self._attr_hvac_action != HVACAction.HEATING:
-            # Turn off heating
-            LOGGER.info(
-                "climate._async_control_heating %s Turn OFF heating", self._attr_unique_id)
-            await self._luxtronik.write(self._heater_sensor.split('.')[1],
-                                        LuxMode.off.value, use_debounce=False,
-                                        update_immediately_after_write=True)
-            self.schedule_update_ha_state(force_refresh=True)
-        elif too_cold and status == LuxMode.off.value and self._attr_hvac_action == HVACAction.HEATING:
-            # Turn on heating
-            LOGGER.info(
-                "climate._async_control_heating %s Turn ON heating", self._attr_unique_id)
-            await self._luxtronik.write(self._heater_sensor.split('.')[1],
-                                        LuxMode.automatic.value,
-                                        use_debounce=False,
-                                        update_immediately_after_write=True)
-            self.schedule_update_ha_state(force_refresh=True)
-        else:
-            LOGGER.info("climate._async_control_heating %s Nothing! too_hot: %s too_cold: %s status: %s _attr_hvac_action: %s",
-                        self._attr_unique_id, too_hot, too_cold, status, self._attr_hvac_action)
-            return False
-        return True
 
     @property
     def hvac_mode(self) -> HVACMode:
@@ -288,19 +254,18 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
         self._attr_hvac_mode = self.__get_hvac_mode(self.hvac_action)
         return self._attr_hvac_mode
 
-    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+    def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new operation mode."""
         if self._attr_hvac_mode == hvac_mode:
             return
-        LOGGER.info("climate.async_set_hvac_mode %s hvac_mode: %s",
+        LOGGER.info("climate.set_hvac_mode %s hvac_mode: %s",
                     self._attr_unique_id, hvac_mode)
         self._attr_hvac_mode = hvac_mode
-        if not await self._async_control_heating():
-            self._last_lux_mode = self.__get_luxmode(hvac_mode, self.preset_mode)
-            await self._luxtronik.write(self._heater_sensor.split('.')[1],
-                                        self._last_lux_mode.value, use_debounce=False,
-                                        update_immediately_after_write=True)
-            self.schedule_update_ha_state(force_refresh=True)
+        self._last_lux_mode = self.__get_luxmode(hvac_mode, self.preset_mode)
+        self._luxtronik.write(self._heater_sensor.split('.')[1],
+                              self._last_lux_mode.value, use_debounce=False,
+                              update_immediately_after_write=True)
+        self.schedule_update_ha_state(force_refresh=True)
 
     def __get_hvac_mode(self, hvac_action):
         luxmode = LuxMode[self._luxtronik.get_value(
@@ -345,29 +310,19 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
             return PRESET_AWAY
         return PRESET_NONE
 
-    async def async_set_preset_mode(self, preset_mode: str) -> None:
+    def set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode."""
         self._attr_preset_mode = preset_mode
         self._last_lux_mode = self.__get_luxmode(self.hvac_mode, preset_mode)
-        await self._luxtronik.write(self._heater_sensor.split('.')[1],
-                                    self._last_lux_mode.value,
-                                    use_debounce=False,
-                                    update_immediately_after_write=True)
+        self._luxtronik.write(self._heater_sensor.split('.')[1],
+                              self._last_lux_mode.value,
+                              use_debounce=False,
+                              update_immediately_after_write=True)
         self.schedule_update_ha_state(force_refresh=True)
 
     # region Helper
     def __is_luxtronik_sensor(self, sensor: str) -> bool:
         return sensor.startswith(CONF_PARAMETERS + '.') or sensor.startswith(CONF_CALCULATIONS + '.') or sensor.startswith(CONF_VISIBILITIES + '.')
-
-    async def _async_sensor_changed(self, event):
-        """Handle temperature changes."""
-        new_state = event.data.get("new_state")
-        if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
-            return
-
-        self._async_update_temp(new_state)
-        await self._async_control_heating()
-        self.async_write_ha_state()
     # endregion Helper
 
 
