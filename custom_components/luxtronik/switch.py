@@ -137,6 +137,7 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         name: str,
         icon: str,
         device_class: str,
+        entity_category: EntityCategory = None,
         icon_off: str = None,
         on_state: str = True,
         off_state: str = False,
@@ -153,6 +154,7 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         self._attr_icon = icon
         self._icon_off = icon_off
         self._attr_device_class = device_class
+        self._attr_entity_category = entity_category
         self._on_state = on_state
         self._off_state = off_state
         self._attr_extra_state_attributes = {ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: sensor_key}
