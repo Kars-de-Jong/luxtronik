@@ -839,7 +839,7 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
         device_class: str = DEVICE_CLASS_TEMPERATURE,
         state_class: str = STATE_CLASS_MEASUREMENT,
         unit_of_measurement: str = TEMP_CELSIUS,
-        entity_category: ENTITY_CATEGORIES = None,
+        entity_category: EntityCategory = None,
         factor: float = None,
         entity_registry_visible_default=True,
         entity_registry_enabled_default=True,
