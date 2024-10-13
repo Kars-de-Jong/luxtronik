@@ -4,12 +4,9 @@ from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.binary_sensor import (DEVICE_CLASS_LOCK,
-                                                    DEVICE_CLASS_OPENING,
-                                                    DEVICE_CLASS_PROBLEM,
-                                                    DEVICE_CLASS_RUNNING,
-                                                    PLATFORM_SCHEMA,
-                                                    BinarySensorEntity)
+from homeassistant.components.binary_sensor import (BinarySensorDeviceClass,
+                                                    BinarySensorEntity,
+                                                    PLATFORM_SCHEMA)
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID, CONF_SENSORS)
@@ -168,7 +165,7 @@ async def async_setup_entry(
             unique_id="evu_unlocked",
             name=text_evu_unlocked,
             icon="mdi:lock",
-            device_class=DEVICE_CLASS_LOCK,
+            device_class=BinarySensorDeviceClass.LOCK,
         ),
         LuxtronikBinarySensor(
             luxtronik=luxtronik,
@@ -177,7 +174,7 @@ async def async_setup_entry(
             unique_id="compressor",
             name=text_compressor,
             icon="mdi:arrow-collapse-all",
-            device_class=DEVICE_CLASS_RUNNING,
+            device_class=BinarySensorDeviceClass.RUNNING,
         ),
         # Soleumwälzpumpe
         # Umwälzpumpe Ventilator, Brunnen- oder Sole
@@ -188,7 +185,7 @@ async def async_setup_entry(
             unique_id="pump_flow",
             name=text_pump_flow,
             icon="mdi:pump",
-            device_class=DEVICE_CLASS_RUNNING,
+            device_class=BinarySensorDeviceClass.RUNNING,
         ),
         LuxtronikBinarySensor(
             luxtronik=luxtronik,
@@ -197,7 +194,7 @@ async def async_setup_entry(
             unique_id="compressor_heater",
             name=text_compressor_heater,
             icon="mdi:heat-wave",
-            device_class=DEVICE_CLASS_RUNNING,
+            device_class=BinarySensorDeviceClass.RUNNING,
         ),
         LuxtronikBinarySensor(
             luxtronik=luxtronik,
@@ -207,7 +204,7 @@ async def async_setup_entry(
             name=text_defrost_valve,
             icon="mdi:valve-open",
             icon_off="mdi:valve-closed",
-            device_class=DEVICE_CLASS_OPENING,
+            device_class=BinarySensorDeviceClass.OPENING,
         ),
         LuxtronikBinarySensor(
             luxtronik=luxtronik,
@@ -216,7 +213,7 @@ async def async_setup_entry(
             unique_id="additional_heat_generator",
             name=text_additional_heat_generator,
             icon="mdi:patio-heater",
-            device_class=DEVICE_CLASS_RUNNING,
+            device_class=BinarySensorDeviceClass.RUNNING,
         ),
         LuxtronikBinarySensor(
             luxtronik=luxtronik,
@@ -225,7 +222,7 @@ async def async_setup_entry(
             unique_id="disturbance_output",
             name="Disturbance output",
             icon="mdi:patio-heater",
-            device_class=DEVICE_CLASS_PROBLEM,
+            device_class=BinarySensorDeviceClass.PROBLEM,
         ),
 
         # calculations.ID_WEB_ASDin Soledruck ausreichend
@@ -248,7 +245,7 @@ async def async_setup_entry(
                 unique_id="circulation_pump_heating",
                 name=text_circulation_pump_heating,
                 icon="mdi:car-turbocharger",
-                device_class=DEVICE_CLASS_RUNNING,
+                device_class=BinarySensorDeviceClass.RUNNING,
             ),
             LuxtronikBinarySensor(
                 luxtronik=luxtronik,
@@ -257,7 +254,7 @@ async def async_setup_entry(
                 unique_id="additional_circulation_pump",
                 name=text_additional_circulation_pump,
                 icon="mdi:pump",
-                device_class=DEVICE_CLASS_RUNNING,
+                device_class=BinarySensorDeviceClass.RUNNING,
             ),
         ]
 
@@ -277,7 +274,7 @@ async def async_setup_entry(
                 unique_id="domestic_water_recirculation_pump",
                 name=text_domestic_water_recirculation_pump,
                 icon="mdi:pump",
-                device_class=DEVICE_CLASS_RUNNING,
+                device_class=BinarySensorDeviceClass.RUNNING,
             ),
             LuxtronikBinarySensor(
                 luxtronik=luxtronik,
@@ -286,7 +283,7 @@ async def async_setup_entry(
                 unique_id=circulation_pump_unique_id,
                 name=text_domestic_water_circulation_pump,
                 icon="mdi:pump",
-                device_class=DEVICE_CLASS_RUNNING,
+                device_class=BinarySensorDeviceClass.RUNNING,
             ),
         ]
         solar_present = luxtronik.detect_solar_present()
@@ -300,7 +297,7 @@ async def async_setup_entry(
                     unique_id="solar_pump",
                     name=text_solar_pump,
                     icon="mdi:pump",
-                    device_class=DEVICE_CLASS_RUNNING,
+                    device_class=BinarySensorDeviceClass.RUNNING,
                 ),
             ]
 
@@ -315,7 +312,7 @@ async def async_setup_entry(
                 unique_id="approval_cooling",
                 name=text_approval_cooling,
                 icon="mdi:lock",
-                device_class=DEVICE_CLASS_LOCK,
+                device_class=BinarySensorDeviceClass.LOCK,
             )
         ]
 
