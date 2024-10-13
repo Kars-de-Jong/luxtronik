@@ -16,7 +16,6 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.util import Throttle
 
 from . import LuxtronikDevice, LuxtronikEntityDescription
 from .const import (DOMAIN, DOWNLOAD_PORTAL_URL, LOGGER,
@@ -43,7 +42,6 @@ async def async_setup_entry(
     LOGGER.debug("Setting up Luxtronik update entity")
     luxtronik_device: LuxtronikDevice = hass.data.get(DOMAIN)
     luxtronik_device.read()
-    data: dict = config_entry.data
 
     description = LuxtronikUpdateEntityDescription(
         luxtronik_key="calculations.ID_WEB_SoftStand",
@@ -160,7 +158,7 @@ class LuxtronikUpdateEntity(UpdateEntity):
                 # Filename e.g.: wp2reg-V2.88.1-9086
                 # Extract 'V2.88.1' from 'wp2reg-V2.88.1-9086'
                 self.__firmware_version_available = filename.split("-", 1)[1]
-            except Exception as err:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 LOGGER.warning(
                     "Could not request download portal firmware version.",
                     exc_info=True,
