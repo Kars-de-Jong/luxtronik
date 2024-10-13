@@ -4,10 +4,7 @@ from datetime import date, datetime
 from typing import Any, cast
 
 from homeassistant.components.number import NumberEntity, NumberMode
-from homeassistant.components.sensor import (ENTITY_ID_FORMAT,
-                                             SensorDeviceClass,
-                                             SensorStateClass,
-                                             STATE_CLASS_MEASUREMENT)
+from homeassistant.components.sensor import ENTITY_ID_FORMAT, SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
@@ -106,7 +103,7 @@ async def async_setup_entry(
                 luxtronik, deviceInfoHeating,
                 number_key=LUX_SENSOR_HEATING_TARGET_CORRECTION,
                 unique_id='heating_target_correction', name=f"{text_correction}",
-                icon='mdi:plus-minus-variant', unit_of_measurement=UnitOfTemperature.TEMP_CELSIUS,
+                icon='mdi:plus-minus-variant', unit_of_measurement=UnitOfTemperature.CELSIUS,
                 min_value=-5.0, max_value=5.0, step=0.1,
                 mode=NumberMode.BOX, entity_category=None),
             LuxtronikNumber(
