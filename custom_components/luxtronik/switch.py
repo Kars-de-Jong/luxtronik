@@ -144,7 +144,6 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         **kwargs: Any,
     ) -> None:
         """Initialize a new Luxtronik switch."""
-        super().__init__(**kwargs)
         self._luxtronik = luxtronik
         self._sensor_key = sensor_key
         self.entity_id = ENTITY_ID_FORMAT.format(f"{DOMAIN}_{unique_id}")
