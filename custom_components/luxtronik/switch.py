@@ -164,14 +164,14 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         self._luxtronik.write(self._sensor_key.split(
             '.')[1], self._on_state, use_debounce=False,
             update_immediately_after_write=True)
-        self.schedule_update_ha_state(force_refresh=True)
+        self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._luxtronik.write(self._sensor_key.split(
             '.')[1], self._off_state, use_debounce=False,
             update_immediately_after_write=True)
-        self.schedule_update_ha_state(force_refresh=True)
+        self.schedule_update_ha_state()
 
     @property
     def is_on(self):

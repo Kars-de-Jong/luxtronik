@@ -197,7 +197,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
                                   update_immediately_after_write=True)
             changed = True
         if changed:
-            self.schedule_update_ha_state(force_refresh=True)
+            self.schedule_update_ha_state()
     # endregion Temperatures
 
     def _is_heating_on(self) -> bool:
@@ -265,7 +265,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
         self._luxtronik.write(self._heater_sensor.split('.')[1],
                               self._last_lux_mode.value, use_debounce=False,
                               update_immediately_after_write=True)
-        self.schedule_update_ha_state(force_refresh=True)
+        self.schedule_update_ha_state()
 
     def __get_hvac_mode(self, hvac_action):
         luxmode = LuxMode[self._luxtronik.get_value(
@@ -318,7 +318,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
                               self._last_lux_mode.value,
                               use_debounce=False,
                               update_immediately_after_write=True)
-        self.schedule_update_ha_state(force_refresh=True)
+        self.schedule_update_ha_state()
 
     # region Helper
     def __is_luxtronik_sensor(self, sensor: str) -> bool:

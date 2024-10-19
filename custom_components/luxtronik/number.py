@@ -391,7 +391,7 @@ class LuxtronikNumber(NumberEntity, RestoreEntity):
         if self._factor is not None:
             value = int(value / self._factor)
         self._luxtronik.write(self._number_key.split('.')[1], value)
-        self.schedule_update_ha_state(force_refresh=True)
+        self.schedule_update_ha_state()
 
 
 class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):
