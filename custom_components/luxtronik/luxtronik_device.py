@@ -169,7 +169,7 @@ class LuxtronikDevice:
     def detect_cooling_present(self):
         """ returns True if Cooling is present """
         CoolingPresent = (len(self.detect_cooling_Mk()) > 0)
-        LOGGER.info(f"CoolingPresent = {CoolingPresent}")
+        LOGGER.debug(f"CoolingPresent = {CoolingPresent}")
         return CoolingPresent
 
     def detect_cooling_target_temperature_sensor(self):
@@ -181,7 +181,7 @@ class LuxtronikDevice:
             cooling_target_temperature_sensor = f"parameters.ID_Sollwert_KuCft{Mk}_akt"
         else:
             cooling_target_temperature_sensor = None
-        LOGGER.info(f"cooling_target_temperature_sensor = '{cooling_target_temperature_sensor}' ")
+        LOGGER.debug(f"cooling_target_temperature_sensor = '{cooling_target_temperature_sensor}' ")
         return cooling_target_temperature_sensor
 
     def write(
