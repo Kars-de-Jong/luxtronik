@@ -229,7 +229,6 @@ def build_device_info(
         model=luxtronik.model,
         name=f"{name} {luxtronik.serial_number}",
 
-        suggested_area="Utility room",
         sw_version=luxtronik.get_value("calculations.ID_WEB_SoftStand"),
 
         via_device=None,
