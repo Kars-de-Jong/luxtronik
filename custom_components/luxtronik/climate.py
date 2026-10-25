@@ -272,9 +272,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
             self._heater_sensor).lower().replace(' ', '_')]
         if luxmode != self._last_lux_mode:
             self._last_lux_mode = luxmode
-        if luxmode in [LuxMode.holidays, LuxMode.party, LuxMode.second_heatsource]:
-            return self._attr_hvac_mode
-        elif luxmode == LuxMode.off:
+        if luxmode == LuxMode.off:
             return HVACMode.OFF
         return HVACMode.AUTO
 
