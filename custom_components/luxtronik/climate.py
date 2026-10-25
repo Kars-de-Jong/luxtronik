@@ -25,6 +25,7 @@ from .const import (CONF_CALCULATIONS, CONF_CONTROL_MODE_HOME_ASSISTANT,
                     LUX_SENSOR_COOLING_THRESHOLD,
                     LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE,
                     LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE,
+                    LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE_2,
                     LUX_SENSOR_HEATING_TARGET_CORRECTION,
                     LUX_SENSOR_MODE_COOLING, LUX_SENSOR_MODE_DOMESTIC_WATER,
                     LUX_SENSOR_MODE_HEATING, LUX_SENSOR_OUTDOOR_TEMPERATURE,
@@ -126,6 +127,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
 
     _status_sensor: Final = LUX_SENSOR_STATUS
     _target_temperature_sensor: str = None
+    _target_temperature_parameter_2: str = None
 
     _heat_status = [LUX_STATUS_HEATING, LUX_STATUS_DOMESTIC_WATER, LUX_STATUS_COOLING]
 
@@ -192,6 +194,10 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
         changed = False
         self._attr_target_temperature = kwargs[ATTR_TEMPERATURE]
         if self._target_temperature_sensor is not None:
+            if self._target_temperature_parameter_2 is not None:
+                self._luxtronik.write(self._target_temperature_parameter_2.split('.')[1],
+                                      self._attr_target_temperature, use_debounce=False,
+                                      update_immediately_after_write=False)
             self._luxtronik.write(self._target_temperature_sensor.split('.')[1],
                                   self._attr_target_temperature, use_debounce=False,
                                   update_immediately_after_write=True)
@@ -333,6 +339,7 @@ class LuxtronikDomesticWaterThermostat(LuxtronikThermostat):
     _attr_max_temp = 65.0
 
     _target_temperature_sensor: Final = LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE
+    _target_temperature_parameter_2: Final = LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE_2
     _heater_sensor: Final = LUX_SENSOR_MODE_DOMESTIC_WATER
     _heat_status: Final = [LUX_STATUS_DOMESTIC_WATER]
 

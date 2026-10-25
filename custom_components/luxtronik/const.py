@@ -214,7 +214,8 @@ LUX_SENSOR_MODE_COOLING: Final = "parameters.ID_Einst_BA_Kuehl_akt"
 LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE: Final = (
     "calculations.ID_WEB_Temperatur_TBW"
 )
-LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE: Final = "parameters.ID_Einst_BWS_akt"
+LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE: Final = "parameters.ID_Soll_BWS_akt"
+LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE_2: Final = "parameters.ID_Einst_BWS_akt"
 LUX_SENSOR_MODE_DOMESTIC_WATER: Final = "parameters.ID_Ba_Bw_akt"
 
 LUX_SENSOR_MODE_FAN: Final = "parameters.ID_Einst_BA_Lueftung_akt"
