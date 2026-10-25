@@ -330,7 +330,7 @@ class LuxtronikDomesticWaterThermostat(LuxtronikThermostat):
 
     _attr_target_temperature_step = 1.0
     _attr_min_temp = 40.0
-    _attr_max_temp = 58.0
+    _attr_max_temp = 65.0
 
     _target_temperature_sensor: Final = LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE
     _heater_sensor: Final = LUX_SENSOR_MODE_DOMESTIC_WATER
