@@ -24,6 +24,7 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, ATTR_STATUS_TEXT,
                     CONF_GROUP,
                     DEFAULT_DEVICE_CLASS, DEVICE_CLASSES, DOMAIN, ICONS,
                     LOGGER, LUX_BINARY_SENSOR_ADDITIONAL_CIRCULATION_PUMP,
+                    LUX_SENSOR_MODE_COOLING,
                     LUX_SENSOR_MODE_HEATING, LUX_SENSOR_STATUS,
                     LUX_SENSOR_STATUS1, LUX_SENSOR_STATUS3, LUX_STATE_ICON_MAP,
                     LUX_STATES_ON, LUX_STATUS1_HEATPUMP_COMING,
@@ -912,13 +913,15 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
         # workaround to detect (passive) cooling active
         if (self._sensor_key == LUX_SENSOR_STATUS) and (value == LUX_STATUS_NO_REQUEST):
             if self._luxtronik.detect_cooling_present():
+                cooling_active = self._luxtronik.get_value(LUX_SENSOR_MODE_COOLING) == LuxMode.automatic.value
+                pump_flow_active = self._luxtronik.get_value("calculations.ID_WEB_VBOout")
                 temp_in = self._luxtronik.get_value("calculations.ID_WEB_Temperatur_TVL")
                 temp_out = self._luxtronik.get_value("calculations.ID_WEB_Temperatur_TRL")
                 temp_heat_in = self._luxtronik.get_value("calculations.ID_WEB_Temperatur_TWE")
                 temp_heat_out = self._luxtronik.get_value("calculations.ID_WEB_Temperatur_TWA")
                 flow_heat_source = self._luxtronik.get_value("calculations.ID_WEB_Durchfluss_WQ")
 
-                if (temp_out > temp_in) and (temp_heat_out > temp_heat_in) and (flow_heat_source > 0):
+                if cooling_active and pump_flow_active and (temp_out > temp_in) and (temp_heat_out > temp_heat_in) and (flow_heat_source > 0):
                     return LUX_STATUS_COOLING
 
         return value if value is None or self._factor is None else round(value * self._factor, 2)
