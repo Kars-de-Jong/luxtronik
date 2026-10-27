@@ -2,11 +2,12 @@
 # region Imports
 
 from dataclasses import dataclass
+from functools import partial
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP
-from homeassistant.core import Event, HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.core import Event, HomeAssistant, ServiceCall
+from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo, EntityDescription
@@ -75,35 +76,39 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEn
     config_entry.async_on_unload(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, logout_luxtronik)
     )
-    await hass.async_add_executor_job(setup_hass_services, hass, config_entry)
     return True
 
 
-def setup_hass_services(hass: HomeAssistant, config_entry: LuxtronikConfigEntry):
-    """Home Assistant services."""
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Set up the luxtronik component."""
 
-    def write_parameter(service):
+    async def write_parameter(service: ServiceCall) -> None:
         """Write a parameter to the Luxtronik heatpump."""
+        config_entries: list[LuxtronikConfigEntry] = (
+            hass.config_entries.async_loaded_entries(DOMAIN)
+        )
+        if not config_entries:
+            raise ServiceValidationError("No Luxtronik heatpump is loaded")
+        config_entry = config_entries[0]
         parameter = service.data.get(ATTR_PARAMETER)
         value = service.data.get(ATTR_VALUE)
         luxtronik = config_entry.runtime_data.device
         update_immediately_after_write = config_entry.data.get(
             CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, True
         )
-        luxtronik.write(
-            parameter,
-            value,
-            use_debounce=True,
-            update_immediately_after_write=update_immediately_after_write,
+        await hass.async_add_executor_job(
+            partial(
+                luxtronik.write,
+                parameter,
+                value,
+                use_debounce=True,
+                update_immediately_after_write=update_immediately_after_write,
+            )
         )
 
-    hass.services.register(
+    hass.services.async_register(
         DOMAIN, SERVICE_WRITE, write_parameter, schema=SERVICE_WRITE_SCHEMA
     )
-
-
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the luxtronik component."""
     return True
 
 
@@ -188,7 +193,6 @@ async def async_reload_entry(hass: HomeAssistant, config_entry: LuxtronikConfigE
 async def async_unload_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEntry) -> bool:
     """Unloading the Luxtronik platforms."""
     LOGGER.info("async_unload_entry '%s'", config_entry)
-    hass.services.async_remove(DOMAIN, SERVICE_WRITE)
 
     unload_ok = await hass.config_entries.async_unload_platforms(
         config_entry, PLATFORMS
