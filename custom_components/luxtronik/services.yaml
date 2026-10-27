@@ -1,9 +1,18 @@
 write:
-  description: Write a parameter on the luxtronik heatpump.
+  name: Write parameter
+  description: Writes a parameter to the Luxtronik heatpump.
   fields:
-    parameter: 
-      description: ID of the value to write.
-      example: "ID_Ba_Bw_akt"
-    value: 
-      description: Value to write. 
+    parameter:
+      name: Parameter
+      description: ID of the parameter to write.
+      required: true
+      example: "ID_Ba_Hz_akt"
+      selector:
+        text:
+    value:
+      name: Value
+      description: Value to set the parameter to, for example an operating mode or a temperature.
+      required: true
       example: "Automatic"
+      selector:
+        text:

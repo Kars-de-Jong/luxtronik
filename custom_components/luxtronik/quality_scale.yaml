@@ -9,7 +9,7 @@ rules:
   config-flow: done
   config-flow-test-coverage: done
   dependency-transparency: done
-  docs-actions: todo
+  docs-actions: done
   docs-conditions:
     status: exempt
     comment: The integration does not provide conditions.

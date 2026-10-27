@@ -28,6 +28,7 @@ This integration works locally. It's only necessary to connect the Luxtronik con
 4. [Tips for using Luxtronik  ](#4-tips-for-using-luxtronik)  
 4.1 [Energy use  ](#41-energy-use)  
 4.2 [Additional sensors (advanced)  ](#42-additional-sensors-advanced)  
+5. [Actions  ](#5-actions)  
 
 ## 1. Prerequisites
 
@@ -124,52 +125,11 @@ Take these files as a reference to figure ot which IDs to use:
 - https://github.com/Bouni/python-luxtronik/blob/master/luxtronik/calculations.py
 - https://github.com/Bouni/python-luxtronik/blob/master/luxtronik/visibilities.py
 
-#### Service
-
-In order to change parameters on the Luxtronik conroller, you can use the following service:
-
-```yaml
-Domain: luxtronik2
-Service: write
-Service Data: {"parameter": "ID_Ba_Hz_akt", "value": "Automatic"}
-```
-
-- parameter
-  - description: ID of the parameter.
-  - type: string
-- value
-  - description: Value you want to set the parameter to.
-  - type: [string, float]
-
-Only a small number of the over 1100 parameters have a known funtion and only these can be written, these are:
-
-- `ID_Ba_Hz_akt` The mode of operation of the heating circuit, possible values are "Automatic", "Second heatsource", "Party", "Holidays", "Off"
-- `ID_Ba_Bw_akt` The mode of operation of the hot water circuit, possible valus are "Automatic", "Second heatsource", "Party", "Holidays", "Off"
-- `ID_Soll_BWS_akt` The set point for hot water generation, for example 50.0 for 50.0°C 
-- `ID_Einst_BA_Kuehl_akt` The mode of operation of the cooling circuit, possible values are "Automatic", "Off"
-- `ID_Einst_KuehlFreig_akt` The outdoor temprature from wher on the cooling should start to operate, for example 24.0 
-- `ID_Ba_Sw_akt` The mode of operation of the swimming pool heating circuit, possible values are "Automatic", "Party", "Holidays", "Off"
-- `ID_Einst_TDC_Max_akt` Max. temperature difference of the hot water buffer tank, for example 70.0
-- `ID_Sollwert_KuCft1_akt` Cooling set point for mixer circuit 1, for example 19.0
-- `ID_Sollwert_KuCft2_akt` Cooling set point for mixer circuit 2, for example 19.0
-- `ID_Sollwert_AtDif1_akt` Cooling working temperature difference 1, for example 5.0
-- `ID_Sollwert_AtDif2_akt` Cooling working temperature difference 2, for example 5.0
-- `ID_Ba_Hz_MK3_akt` The mode of operation of the heating mixer circuit 3, possible values are "Automatic", "Party", "Holidays", "Off"
-- `ID_Einst_Kuhl_Zeit_Ein_akt` Cooling outdoor temperature overrun, for example 0.0
-- `ID_Einst_Kuhl_Zeit_Aus_akt` Cooling outdoor temperature underrun, for example 0.0
-- `ID_Einst_Solar_akt` Mode of operation for solar heat generation, "Automatic", "Second heatsource", "Party", "Holidays", "Off"
-- `ID_Einst_BA_Lueftung_akt` Mode of operation of the integrated ventilation unit, posisble values are "Automatic", "Party", "Holidays", "Off"
-- `ID_Sollwert_KuCft3_akt` Cooling set point for mixer circuit 3, for example 20.0
-- `ID_Sollwert_AtDif3_akt` Cooling working temperature difference 3, for example 5.0
-
-> ℹ️ Before changing a parameter it smart to first read the current value and note it somewhere in case you want to set it back to its original value.
-All parameters can be configured as sensors and read that way.
-
 #### Sensor
 
 The Luxtronik sensor platform allows you to monitor the status values of a heat pump unit controlled by a Luxtronik controller.
 
-Sensors are read-only. These YAML platforms require the integration to be set up through the UI first (see [Adding Luxtronik](#3-adding-luxtronik)). To write to the heatpump, use the provided service Luxtronik Integration - Service.
+Sensors are read-only. These YAML platforms require the integration to be set up through the UI first (see [Adding Luxtronik](#3-adding-luxtronik)). To write to the heatpump, use the [`luxtronik2.write` action](#5-actions).
 
 To use a Luxtronik sensor in your installation, add the following lines to your `configuration.yaml` file:
 
@@ -217,7 +177,7 @@ sensor:
 
 The Luxtronik binary sensor platform allows you to monitor the status values of a heat pump unit controlled by a Luxtronik controller.
 
-Binary sensors are read-only. To write to the heatpump, use the provided service Luxtronik Integration - Service.
+Binary sensors are read-only. To write to the heatpump, use the [`luxtronik2.write` action](#5-actions).
 
 To use a Luxtronik binary sensor in your installation, add the following lines to your `configuration.yaml` file:
 
@@ -265,6 +225,61 @@ binary_sensor:
         friendly_name: Utility company lock
         icon: mdi:lock
 ```
+
+## 5. Actions
+
+The integration provides the following action.
+
+### `luxtronik2.write`
+
+Writes a parameter to the Luxtronik controller. You can call it from automations and scripts, or try it out under `Developer tools -> Actions`.
+
+| Field | Required | Description | Example |
+|---|---|---|---|
+| `parameter` | yes | ID (or numeric index) of the parameter to write. See [Parameter IDs](#parameter-ids). | `ID_Ba_Hz_akt` |
+| `value` | yes | Value to set the parameter to: a text value such as an operating mode, or a number such as a temperature. | `Automatic` |
+
+Example:
+
+```yaml
+action: luxtronik2.write
+data:
+  parameter: ID_Ba_Hz_akt
+  value: Automatic
+```
+
+Things to know:
+
+- The action writes to the first loaded Luxtronik heatpump. If you have set up more than one heatpump, you cannot choose which one. If no heatpump is loaded, the action fails with the error "No Luxtronik heatpump is loaded".
+- Writes are delayed by 3 seconds. If the action is called again within those 3 seconds, the earlier call is dropped and only the last one is written, even if it was for a different parameter. Leave at least 3 seconds between calls when you change several parameters in a row.
+- If **Update immediately after writing** is enabled for the heatpump (the default), all values are read again 3 seconds after the write, so the change shows up without waiting for the next update.
+- The action returns as soon as the write has been scheduled. An unknown parameter ID is not reported as an error; it is only logged as a warning in the Home Assistant log and nothing is written.
+
+#### Parameters with a known function
+
+The controller has over 1100 parameters, but only a small number of them have a known function. These are:
+
+- `ID_Ba_Hz_akt` The mode of operation of the heating circuit, possible values are "Automatic", "Second heatsource", "Party", "Holidays", "Off"
+- `ID_Ba_Bw_akt` The mode of operation of the hot water circuit, possible values are "Automatic", "Second heatsource", "Party", "Holidays", "Off"
+- `ID_Soll_BWS_akt` The set point for hot water generation, for example 50.0 for 50.0°C 
+- `ID_Einst_BA_Kuehl_akt` The mode of operation of the cooling circuit, possible values are "Automatic", "Off"
+- `ID_Einst_KuehlFreig_akt` The outdoor temperature from where on the cooling should start to operate, for example 24.0 
+- `ID_Ba_Sw_akt` The mode of operation of the swimming pool heating circuit, possible values are "Automatic", "Party", "Holidays", "Off"
+- `ID_Einst_TDC_Max_akt` Max. temperature difference of the hot water buffer tank, for example 70.0
+- `ID_Sollwert_KuCft1_akt` Cooling set point for mixer circuit 1, for example 19.0
+- `ID_Sollwert_KuCft2_akt` Cooling set point for mixer circuit 2, for example 19.0
+- `ID_Sollwert_AtDif1_akt` Cooling working temperature difference 1, for example 5.0
+- `ID_Sollwert_AtDif2_akt` Cooling working temperature difference 2, for example 5.0
+- `ID_Ba_Hz_MK3_akt` The mode of operation of the heating mixer circuit 3, possible values are "Automatic", "Party", "Holidays", "Off"
+- `ID_Einst_Kuhl_Zeit_Ein_akt` Cooling outdoor temperature overrun, for example 0.0
+- `ID_Einst_Kuhl_Zeit_Aus_akt` Cooling outdoor temperature underrun, for example 0.0
+- `ID_Einst_Solar_akt` Mode of operation for solar heat generation, "Automatic", "Second heatsource", "Party", "Holidays", "Off"
+- `ID_Einst_BA_Lueftung_akt` Mode of operation of the integrated ventilation unit, possible values are "Automatic", "Party", "Holidays", "Off"
+- `ID_Sollwert_KuCft3_akt` Cooling set point for mixer circuit 3, for example 20.0
+- `ID_Sollwert_AtDif3_akt` Cooling working temperature difference 3, for example 5.0
+
+> ⚠️ The integration does not check the value before writing it. Before changing a parameter it is smart to first read the current value and note it somewhere in case you want to set it back to its original value.
+All parameters can be configured as sensors and read that way (see [Additional sensors](#42-additional-sensors-advanced)).
 
 ## Some Screenshots
 ![image](https://user-images.githubusercontent.com/32298537/178588098-09e960f0-f849-475c-9afa-cf4a78e5d76d.png)
