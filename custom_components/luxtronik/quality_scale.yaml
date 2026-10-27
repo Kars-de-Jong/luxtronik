@@ -69,6 +69,6 @@ rules:
   # Platinum
   async-dependency: todo
   inject-websession:
-    status: exempt
-    comment: The integration does not use HTTP.
+    status: todo
+    comment: The firmware update entity fetches the latest version with requests.
   strict-typing: todo
