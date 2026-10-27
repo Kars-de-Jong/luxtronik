@@ -20,75 +20,97 @@ This component extends the original luxtronik component with automatic discovery
 
 This integration works locally. It's only necessary to connect the Luxtronik controller to your network using an ethernet cable. No additional hard- or software is needed.
 
-1. [Installation  ](#1-installation)  
-1.1 [HACS (Recommended)  ](#11-hacs-recommended)  
-1.2 [Manual installation  ](#12-manual-installation)  
-2. [Adding Luxtronik  ](#2-adding-luxtronik)  
-3. [Tips for using Luxtronik  ](#3-tips-for-using-luxtronik)  
-3.1 [Energy use  ](#31-energy-use)  
-3.2 [Additional sensors (advanced)  ](#32-additional-sensors-advanced)  
+1. [Prerequisites  ](#1-prerequisites)  
+2. [Installation  ](#2-installation)  
+2.1 [HACS (Recommended)  ](#21-hacs-recommended)  
+2.2 [Manual installation  ](#22-manual-installation)  
+3. [Adding Luxtronik  ](#3-adding-luxtronik)  
+4. [Tips for using Luxtronik  ](#4-tips-for-using-luxtronik)  
+4.1 [Energy use  ](#41-energy-use)  
+4.2 [Additional sensors (advanced)  ](#42-additional-sensors-advanced)  
 
-## 1. Installation
+## 1. Prerequisites
 
-### 1.1 HACS (recommended)
+Before you install this integration, make sure you have:
 
-Add the custom repo to HACS
-1. Go to 'HACS > Integration'
-2. Select 'Custom repositories' from the top right menu
-3. Under Repository, enter 'https://github.com/BenPru/luxtronik'
-4. Under Category, select 'Integration'
-5. Click 'Add'
-The new integration will appear as a new integration and under 'Explore & Download Repositories' in the bottom right
+- A heatpump with a **Luxtronik 2.x controller** (for example Alpha Innotec or Novelan, see the list above).
+- The controller **connected to your local network with an ethernet cable**. Home Assistant must be able to reach it.
+- A **fixed IP address** for the controller. Configure a DHCP reservation (static lease) in your router, so the address does not change.
+- The **network port** of the controller. This is usually `8889`; controllers with older firmware use `8888`.
+- **Home Assistant 2024.11.0 or newer**.
+- [HACS](https://hacs.xyz/) installed, if you want to use the recommended installation method.
 
-Install the integration
-1. Click on the new integration or find it under 'Explore & Download Repositories' in the bottom right
-2. Select 'download' at the bottom right.
-3. Restart Home Assistant
+## 2. Installation
 
-### 1.2 Manual installation
+### 2.1 HACS (recommended)
 
-Add the integration to Home Assistant
-1. Download the latest release of the Luxtronik integration from this repository
-2. In Home Assistant, create a folder 'config/custom_components'
-3. Add the Luxtronik integration to the 'custom_components' folder;
-4. Restart Home Assistant;
+Add the custom repository to HACS
+1. In Home Assistant, go to `HACS`.
+2. Select `Custom repositories` from the menu (three dots) in the top right.
+3. Under Repository, enter `https://github.com/Kars-de-Jong/luxtronik`.
+4. Under Type (Category), select `Integration`.
+5. Click `Add`.
 
-Install the integration
-1. Add the Luxtronik integration to Home Assistant (`Settings -> Devices & services -> Add integration`);
-2. Restart Home Assistant;
+Download the integration
+1. Search for `Luxtronik` in HACS and open it.
+2. Select `Download` at the bottom right and confirm.
+3. Restart Home Assistant (`Settings -> System -> Restart`).
 
-## 2. Adding Luxtronik
+Continue with [Adding Luxtronik](#3-adding-luxtronik).
+
+### 2.2 Manual installation
+
+1. Download the latest release of this integration from the [releases page](https://github.com/Kars-de-Jong/luxtronik/releases).
+2. In your Home Assistant configuration directory, create the folder `config/custom_components` if it does not exist yet.
+3. Copy the folder `custom_components/luxtronik` from the release into it, so you end up with `config/custom_components/luxtronik` (containing `manifest.json`).
+4. Restart Home Assistant.
+
+Continue with [Adding Luxtronik](#3-adding-luxtronik).
+
+## 3. Adding Luxtronik
 
 #### Autodiscovery 
 
-Your heatpump should be autodiscovered by home assistant.  
+Your heatpump should be autodiscovered by Home Assistant (via DHCP).  
 <img src="https://user-images.githubusercontent.com/5879533/178813978-bd8f13ff-ed27-4fa8-bfd0-6ff86a6e9786.png" width="300" />
 
 Press `Configure` and follow the steps to the end. 
 
 #### Manual
 
-'If auto discovery does not work, please give feedback with the first six chars of your luxtronik heatpump mac address, the original hostname, the manufacturer and model. 
+If auto discovery does not work, please give feedback with the first six chars of your luxtronik heatpump mac address, the original hostname, the manufacturer and model. 
 
-To add the heatpump manually go to `Settings -> Devices & services -> Add integration` and add a new Luxtronik device.'
+To add the heatpump manually:
+1. Go to `Settings -> Devices & services`.
+2. Click `Add integration` and search for `Luxtronik`.
+3. Fill in the settings (see below) and click `Submit`.
 
-Select Configure and review the settings.  
 <img src="https://user-images.githubusercontent.com/5879533/178814105-1dfc9445-1591-417b-9162-0b9f341cd0b2.png" width="500" />
 
-> ℹ️ Ensure the IP address is static. This can be configured in your router.'
+The following settings are available:
 
-## 3. Tips for using Luxtronik
+- **Host**: the hostname or IP address of your Luxtronik controller.
+- **Port**: the network port of the controller, usually `8889` (default) or `8888` on older firmware.
+- **Control thermostats through Home Assistant (experimental)**: when a Home Assistant thermostat is idle, the off state is sent to the heatpump, so it cannot start that circuit.
+- **Update immediately after writing**: read all values from the heatpump shortly after a setting has been written, so the change shows up without waiting for the next update.
+- **Indoor temperature sensor**: the Home Assistant sensor entity that provides the current indoor temperature for the heating thermostat.
+
+> ℹ️ Ensure the IP address is static. This can be configured in your router.
+
+> ℹ️ The connection can only be set up through the UI. The former top-level `luxtronik2:` YAML configuration is no longer supported; remove it from your `configuration.yaml`. The YAML `sensor` and `binary_sensor` platforms (see [Additional sensors](#42-additional-sensors-advanced)) still work.
+
+## 4. Tips for using Luxtronik
 
 It's not always clear from the name alone what an entity exactly means and how it effects your heatpump. The main source of information is ofcourse the [Luxtronik Operating Manual](https://www.alpha-innotec.cz/wp-content/uploads/2019/03/controller2-1.pdf). 
 
 Another great source is [FHEM - Luxtronik 2.0](https://wiki.fhem.de/wiki/Luxtronik_2.0). It's in German so use Google Translate.  
 It contains details about the various parameters and how to use them to optimize your heatpump efficiency. Read carfully though. Make small incremental changes and monitor your progress in Home Assistant. You don't want to miss out on this information. 
 
-### 3.1 Energy use
+### 4.1 Energy use
 
 Not all heatpumps have build in electrical energy metering and instead only show the energy produced in heat, not the energy consumed in electricity. Adding a (strong) energy meter is a nice addition to measure the SCOP of your device. Shelly energy meters are recommended since they offer offer a [16A power plug](https://www.shelly.com/en-nl/products/product-overview/1xplug) and a [variety of in-line or clamp energy meters](https://www.shelly.com/en-nl/products/energy-metering-energy-efficiency) with various protection mechanisms. 
 
-### 3.2 Additional aensors (advanced)
+### 4.2 Additional sensors (advanced)
 
 The most usefull sensors and parameters are created automaticly. But if you miss a sensor you can add it manually via yaml configuration like the original module from [Bouni/luxtronik](https://github.com/Bouni/luxtronik).
 
@@ -147,7 +169,7 @@ All parameters can be configured as sensors and read that way.
 
 The Luxtronik sensor platform allows you to monitor the status values of a heat pump unit controlled by a Luxtronik controller.
 
-Sensors are read-only. To write to the heatpump, use the provided service Luxtronik Integration - Service.
+Sensors are read-only. These YAML platforms require the integration to be set up through the UI first (see [Adding Luxtronik](#3-adding-luxtronik)). To write to the heatpump, use the provided service Luxtronik Integration - Service.
 
 To use a Luxtronik sensor in your installation, add the following lines to your `configuration.yaml` file:
 

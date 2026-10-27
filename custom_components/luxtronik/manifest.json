@@ -6,7 +6,7 @@
   "config_flow": true,
   "iot_class": "local_polling",
   "quality_scale": "bronze",
-  "documentation": "https://www.home-assistant.io/integrations/luxtronik",
+  "documentation": "https://github.com/Kars-de-Jong/luxtronik",
   "issue_tracker": "https://github.com/Kars-de-Jong/luxtronik/issues",
   "dependencies": [],
   "after_dependencies": ["http"],
