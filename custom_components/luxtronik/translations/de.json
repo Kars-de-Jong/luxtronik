@@ -2,10 +2,13 @@
   "config": {
     "abort": {
       "already_configured": "Der Dienst ist bereits konfiguriert",
-      "existing_instance_updated": "Bestehende Konfiguration wurde aktualisiert."
+      "existing_instance_updated": "Bestehende Konfiguration wurde aktualisiert.",
+      "not_luxtronik_device": "Das gefundene Ger\u00e4t ist keine Luxtronik W\u00e4rmepumpensteuerung",
+      "cannot_connect": "Verbindung fehlgeschlagen"
     },
     "error": {
-      "cannot_connect": "Verbindung fehlgeschlagen"
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "unknown": "Unerwarteter Fehler"
     },
     "step": {
       "user": {

@@ -57,11 +57,15 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             discovery_info.ip,
         )
         # Validate dhcp result with socket broadcast:
-        broadcast_discover_ip, broadcast_discover_port = discover()
+        broadcast_discover_ip, broadcast_discover_port = await self.hass.async_add_executor_job(discover)
         if broadcast_discover_ip != discovery_info.ip:
-            return None
+            return self.async_abort(reason="not_luxtronik_device")
 
-        luxtronik = LuxtronikDevice.connect(broadcast_discover_ip, broadcast_discover_port)
+        try:
+            luxtronik = await self.hass.async_add_executor_job(
+                LuxtronikDevice.connect, broadcast_discover_ip, broadcast_discover_port)
+        except OSError:
+            return self.async_abort(reason="cannot_connect")
         await self.async_set_unique_id(luxtronik.unique_id)
         self._abort_if_unique_id_configured()
 
@@ -73,12 +77,14 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return await self.async_step_user()
 
     async def _show_setup_form(
-        self, errors: dict[str, str] | None = None
+        self,
+        user_input: dict[str, Any] | None = None,
+        errors: dict[str, str] | None = None,
     ) -> FlowResult:
         """Show the setup form to the user."""
         return self.async_show_form(
             step_id="user",
-            data_schema=self._get_schema(),
+            data_schema=self.add_suggested_values_to_schema(self._get_schema(), user_input),
             errors=errors or {},
         )
 
@@ -104,7 +110,14 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         }
         self._async_abort_entries_match(data)
 
-        luxtronik = LuxtronikDevice.connect(user_input[CONF_HOST], user_input[CONF_PORT])
+        try:
+            luxtronik = await self.hass.async_add_executor_job(
+                LuxtronikDevice.connect, user_input[CONF_HOST], user_input[CONF_PORT])
+        except OSError:
+            return await self._show_setup_form(user_input, {"base": "cannot_connect"})
+        except Exception:  # pylint: disable=broad-except
+            LOGGER.exception("Unexpected error connecting to the heatpump")
+            return await self._show_setup_form(user_input, {"base": "unknown"})
 
         await self.async_set_unique_id(luxtronik.unique_id)
         self._abort_if_unique_id_configured()
