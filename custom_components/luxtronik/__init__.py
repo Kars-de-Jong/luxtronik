@@ -247,10 +247,13 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         luxtronik = LuxtronikDevice.connect(new[CONF_HOST], new[CONF_PORT])
 
         _delete_legacy_devices(hass, config_entry, luxtronik.unique_id)
-        config_entry.unique_id = luxtronik.unique_id
-        config_entry.title = f"{luxtronik.manufacturer} {luxtronik.model} {luxtronik.serial_number}"
-        config_entry.version = 2
-        hass.config_entries.async_update_entry(config_entry, data=new)
+        hass.config_entries.async_update_entry(
+            config_entry,
+            data=new,
+            unique_id=luxtronik.unique_id,
+            title=f"{luxtronik.manufacturer} {luxtronik.model} {luxtronik.serial_number}",
+            version=2,
+        )
 
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
