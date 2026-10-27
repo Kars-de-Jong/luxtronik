@@ -7,7 +7,6 @@ from homeassistant.components.sensor import (ENTITY_ID_FORMAT,
                                              SensorStateClass)
 from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
                                  CONF_SENSORS,
-                                 EVENT_HOMEASSISTANT_STOP,
                                  STATE_UNAVAILABLE,
                                  UnitOfElectricPotential, UnitOfEnergy, UnitOfPower,
                                  UnitOfPressure, UnitOfTemperature, UnitOfTime)
@@ -702,10 +701,6 @@ async def async_setup_entry(
             )
         ]
 
-    hass.bus.async_listen_once(
-        EVENT_HOMEASSISTANT_STOP, luxtronik.async_will_remove_from_hass()
-    )
-
     async_add_entities(entities)
 
 # async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -1063,6 +1058,12 @@ class LuxtronikStatusSensor(LuxtronikSensor, RestoreEntity):
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
         await super().async_added_to_hass()
+        DATA_UPDATED = f"{DOMAIN}_data_updated"
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, DATA_UPDATED, self._schedule_immediate_update
+            )
+        )
         state = await self.async_get_last_state()
         if not state:
             return
@@ -1073,11 +1074,6 @@ class LuxtronikStatusSensor(LuxtronikSensor, RestoreEntity):
             self._first_evu_end_time = self._restore_value(state.attributes['EVU first end time'])
             self._second_evu_start_time = self._restore_value(state.attributes['EVU second start time'])
             self._second_evu_end_time = self._restore_value(state.attributes['EVU second end time'])
-
-        DATA_UPDATED = f"{DOMAIN}_data_updated"
-        async_dispatcher_connect(
-            self.hass, DATA_UPDATED, self._schedule_immediate_update
-        )
 
     @callback
     def _schedule_immediate_update(self):

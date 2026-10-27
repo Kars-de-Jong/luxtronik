@@ -19,7 +19,7 @@ rules:
   docs-triggers:
     status: exempt
     comment: The integration does not provide triggers.
-  entity-event-setup: todo
+  entity-event-setup: done
   entity-unique-id: done
   has-entity-name:
     status: done

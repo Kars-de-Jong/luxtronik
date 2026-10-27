@@ -42,10 +42,6 @@ class LuxtronikDevice:
         """Connect to heatpump."""
         return LuxtronikDevice(host, port, False, 30)
 
-    async def async_will_remove_from_hass(self):
-        """Disconnect from Luxtronik by stopping monitor."""
-        self.disconnect()
-
     def disconnect(self):
         """Disconnect from Luxtronik. - Nothing todo - disconnected after every read!"""
         pass
