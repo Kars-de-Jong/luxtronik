@@ -134,7 +134,146 @@
   },
   "entity": {
     "sensor": {
+      "status": {
+        "name": "Status"
+      },
+      "status_time": {
+        "name": "Status Zeit"
+      },
+      "status_line_1": {
+        "name": "Status 1"
+      },
+      "status_line_2": {
+        "name": "Status 2"
+      },
+      "status_line_3": {
+        "name": "Status 3"
+      },
+      "heat_source_input_temperature": {
+        "name": "Wärmequelle Eingang"
+      },
+      "outdoor_temperature": {
+        "name": "Aussen Temperatur"
+      },
+      "outdoor_temperature_average": {
+        "name": "Mittel Aussen Temperatur"
+      },
+      "compressor_impulses": {
+        "name": "Impulse Verdichter"
+      },
+      "operation_hours_compressor1": {
+        "name": "Gesamt Betriebsstunden Verdichter 1"
+      },
+      "operation_hours_compressor2": {
+        "name": "Gesamt Betriebsstunden Verdichter 2"
+      },
+      "compressor_impulses2": {
+        "name": "Impulse Verdichter 2"
+      },
+      "operation_hours": {
+        "name": "Gesamt Betriebsstunden"
+      },
+      "heat_amount_counter": {
+        "name": "Zähler Wärmemenge"
+      },
+      "hot_gas_temperature": {
+        "name": "Heissgas"
+      },
+      "suction_compressor_temperature": {
+        "name": "Ansaug Verdichter"
+      },
+      "suction_evaporator_temperature": {
+        "name": "Ansaug Verdampfer"
+      },
+      "compressor_heating_temperature": {
+        "name": "Verdichter"
+      },
+      "overheating_temperature": {
+        "name": "Überhitzung"
+      },
+      "overheating_target_temperature": {
+        "name": "Überhitzung Soll"
+      },
+      "high_pressure": {
+        "name": "Hochdruck"
+      },
+      "low_pressure": {
+        "name": "Niederdruck"
+      },
+      "operation_hours_additional_heat_generator": {
+        "name": "Zusätzlicher Wärmeerzeuger Betriebsstunden"
+      },
+      "analog_out1": {
+        "name": "Analog Ausgang 1"
+      },
+      "analog_out2": {
+        "name": "Analog Ausgang 2"
+      },
+      "current_heat_output": {
+        "name": "Leistung Ist"
+      },
+      "additional_heat_generator_amount_counter": {
+        "name": "Zusätzlicher Wärmeerzeuger Wärmemenge"
+      },
+      "pump_frequency": {
+        "name": "Verdichter Frequenz"
+      },
+      "heat_source_output_temperature": {
+        "name": "Wärmequelle Ausgang"
+      },
+      "room_temperature": {
+        "name": "Raum"
+      },
+      "room_target_temperature": {
+        "name": "Raum Soll"
+      },
+      "flow_in_temperature": {
+        "name": "Vorlauf"
+      },
+      "flow_out_temperature": {
+        "name": "Rücklauf"
+      },
+      "flow_out_temperature_target": {
+        "name": "Rücklauf Soll"
+      },
+      "operation_hours_heating": {
+        "name": "Betriebsstunden"
+      },
+      "heat_amount_heating": {
+        "name": "Wärmemenge"
+      },
+      "heat_energy_input": {
+        "name": "Energieaufnahme"
+      },
+      "flow_out_temperature_external": {
+        "name": "Rücklauf (extern)"
+      },
+      "domestic_water_temperature": {
+        "name": "Temperatur"
+      },
+      "operation_hours_domestic_water": {
+        "name": "Betriebsstunden"
+      },
+      "heat_amount_domestic_water": {
+        "name": "Wärmemenge"
+      },
+      "domestic_water_energy_input": {
+        "name": "Energieaufnahme"
+      },
+      "solar_collector_temperature": {
+        "name": "Solar Kollektor"
+      },
+      "solar_buffer_temperature": {
+        "name": "Solar Puffer"
+      },
+      "operation_hours_solar": {
+        "name": "Solar Betriebsstunden"
+      },
+      "operation_hours_cooling": {
+        "name": "Betriebsstunden"
+      },
       "switchoff_reason": {
+        "name": "Abschaltgrund",
         "state": {
           "0": "W\u00e4rmepumpe St\u00f6rung",
           "1": "Anlagen St\u00f6rung",
@@ -152,6 +291,7 @@
         }
       },
       "error_reason": {
+        "name": "Fehlerursache",
         "state": {
           "701": "Niederdruckst\u00f6rung",
           "702": "Niederdrucksperre - RESET automatisch",
@@ -228,6 +368,158 @@
           "793": "Schwerw. Inverter Fehler",
           "-1": "Unbekannter Fehler"
         }
+      }
+    },
+    "binary_sensor": {
+      "evu_unlocked": {
+        "name": "Sperrzeit Freigabe"
+      },
+      "compressor": {
+        "name": "Verdichter"
+      },
+      "pump_flow": {
+        "name": "Soleumwälzpumpe"
+      },
+      "compressor_heater": {
+        "name": "Verdichterheizung"
+      },
+      "defrost_valve": {
+        "name": "Abtau Ventil"
+      },
+      "additional_heat_generator": {
+        "name": "Zusätzlicher Wärmeerzeuger"
+      },
+      "disturbance_output": {
+        "name": "Störungsausgang"
+      },
+      "circulation_pump_heating": {
+        "name": "Umwälzpumpe"
+      },
+      "additional_circulation_pump": {
+        "name": "Zusatzumwälzpumpe"
+      },
+      "domestic_water_recirculation_pump": {
+        "name": "Umwälzpumpe"
+      },
+      "domestic_water_circulation_pump": {
+        "name": "Zirkulationspumpe"
+      },
+      "domestic_water_charging_pump": {
+        "name": "Boilerladepumpe"
+      },
+      "solar_pump": {
+        "name": "Solar Pumpe"
+      },
+      "approval_cooling": {
+        "name": "Freigabe"
+      }
+    },
+    "number": {
+      "release_second_heat_generator": {
+        "name": "Freigabe ZWE"
+      },
+      "release_time_second_heat_generator": {
+        "name": "Freigabe Zeit ZWE"
+      },
+      "heating_target_correction": {
+        "name": "Ziel Korrektur"
+      },
+      "pump_optimization_time": {
+        "name": "Pumpenoptimierung Zeit"
+      },
+      "heating_threshold_temperature": {
+        "name": "Heizgrenze Temperatur"
+      },
+      "heating_min_flow_out_temperature": {
+        "name": "Min. Soll Rücklauf"
+      },
+      "heating_circuit_curve1_temperature": {
+        "name": "Heizkurve 1"
+      },
+      "heating_circuit_curve2_temperature": {
+        "name": "Heizkurve 2"
+      },
+      "heating_circuit_curve_night_temperature": {
+        "name": "Heizkurve Nachts"
+      },
+      "heating_night_lowering_to_temperature": {
+        "name": "Absenkung bis Aussentemperatur"
+      },
+      "heating_hysteresis": {
+        "name": "Hysterese Heizungsregler"
+      },
+      "heating_max_flow_out_increase_temperature": {
+        "name": "Max. Soll Rücklauferhöhung"
+      },
+      "heating_maximum_circulation_pump_speed": {
+        "name": "Maximale Pumpen Zirkulations Geschwindigkeit"
+      },
+      "heating_room_temperature_impact_factor": {
+        "name": "Raum Temperatur Einflussfaktor"
+      },
+      "domestic_water_target_temperature": {
+        "name": "Soll"
+      },
+      "domestic_water_hysteresis": {
+        "name": "Hysterese"
+      },
+      "domestic_water_thermal_desinfection_target": {
+        "name": "Thermische Desinfektion Soll"
+      },
+      "solar_pump_on_difference_temperature": {
+        "name": "Einschalt Differenz Kollektor/Speicher (Solar Pumpe)"
+      },
+      "solar_pump_off_difference_temperature": {
+        "name": "Ausschalt Differenz Kollektor/Speicher (Solar Pumpe)"
+      },
+      "solar_pump_off_max_difference_temperature_boiler": {
+        "name": "Ausschalt max. Differenz Kollektor/Speicher (Solar Pumpe)"
+      },
+      "solar_pump_max_temperature_collector": {
+        "name": "Max. Temperatur Solar Kollektor"
+      },
+      "cooling_threshold_temperature": {
+        "name": "T_aussen >"
+      },
+      "cooling_start_delay_hours": {
+        "name": "Startverzögerung"
+      },
+      "cooling_stop_delay_hours": {
+        "name": "Stoppverzögerung"
+      },
+      "cooling_target_temperature": {
+        "name": "Soll"
+      }
+    },
+    "switch": {
+      "remote_maintenance": {
+        "name": "Fernwartung"
+      },
+      "efficiency_pump": {
+        "name": "Effizienzpumpe"
+      },
+      "pump_heat_control": {
+        "name": "Pumpenheizkontrolle"
+      },
+      "pump_optimization": {
+        "name": "Pumpenoptimierung"
+      },
+      "heating": {
+        "name": "Automatikmodus"
+      },
+      "heating_threshold": {
+        "name": "Heizgrenze"
+      },
+      "domestic_water": {
+        "name": "Automatikmodus"
+      },
+      "cooling": {
+        "name": "Automatikmodus"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
       }
     }
   }

@@ -8,8 +8,7 @@ from datetime import datetime, timedelta
 from typing import Final
 
 import requests
-from homeassistant.components.update import (ENTITY_ID_FORMAT, UpdateEntity,
-                                             UpdateEntityDescription)
+from homeassistant.components.update import UpdateEntity, UpdateEntityDescription
 from homeassistant.components.update.const import UpdateEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE
@@ -60,6 +59,7 @@ class LuxtronikUpdateEntity(UpdateEntity):
     """Representation of Luxtronik."""
 
     _attr_title = "Luxtronik Firmware Version"
+    _attr_has_entity_name = True
     _attr_supported_features: UpdateEntityFeature = UpdateEntityFeature.RELEASE_NOTES
     __firmware_version_available = None
     __firmware_version_available_last_request = None
@@ -80,14 +80,10 @@ class LuxtronikUpdateEntity(UpdateEntity):
         # self._attr_unique_id = f"tuya.{device.id}"
         self.luxtronik_key = description.luxtronik_key
 
-        self._attr_name = "Luxtronik Firmware"
+        self._attr_translation_key = description.key
         luxtronik_device.read()
         # self._attr_state = luxtronik_device.get_value(description.luxtronik_key)
-        prefix = DOMAIN
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            f"{prefix}_{description.key}"
-        )
-        self._attr_unique_id = self.entity_id
+        self._attr_unique_id = f"{luxtronik_device.unique_id}_{description.key}"
         self._request_available_firmware_version()
 
     @property

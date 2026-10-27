@@ -7,6 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo, EntityDescription
 from homeassistant.helpers.typing import ConfigType
 from luxtronik import LOGGER as LuxLogger
@@ -255,6 +256,10 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
             version=2,
         )
 
+    if config_entry.version == 2:
+        await _async_migrate_unique_ids(hass, config_entry)
+        hass.config_entries.async_update_entry(config_entry, version=3)
+
     LOGGER.info("Migration to version %s successful", config_entry.version)
 
     return True
@@ -282,3 +287,35 @@ def _delete_legacy_devices(hass: HomeAssistant, config_entry: ConfigEntry, uniqu
     for device in devices:
         if not _identifiers_exists(identifiers_list, device.identifiers):
             dr_instance.async_remove_device(device.id)
+
+
+async def _async_migrate_unique_ids(hass: HomeAssistant, config_entry: ConfigEntry):
+    """Migrate legacy unique ids to "<serial>_<key>".
+
+    Legacy unique ids were derived from the entity_id ("sensor.luxtronik2_<key>",
+    "update.luxtronik2_firmware"), or were the bare key for climate entities.
+    The entity_id is kept, so existing automations and dashboards keep working.
+    """
+    ent_reg = er.async_get(hass)
+
+    def _migrate(entity_entry: er.RegistryEntry) -> dict | None:
+        old_unique_id = entity_entry.unique_id
+        if "." in old_unique_id:
+            key = old_unique_id.partition(f".{DOMAIN}_")[2]
+            if not key:
+                return None
+        elif entity_entry.domain == "climate":
+            key = old_unique_id
+        else:
+            return None
+        new_unique_id = f"{config_entry.unique_id}_{key.replace(' ', '_')}"
+        if ent_reg.async_get_entity_id(entity_entry.domain, DOMAIN, new_unique_id):
+            LOGGER.warning(
+                "Cannot migrate %s to unique_id '%s', it already exists",
+                entity_entry.entity_id, new_unique_id)
+            return None
+        LOGGER.debug("Migrating %s unique_id '%s' -> '%s'",
+                     entity_entry.entity_id, old_unique_id, new_unique_id)
+        return {"new_unique_id": new_unique_id}
+
+    await er.async_migrate_entries(hass, config_entry.entry_id, _migrate)

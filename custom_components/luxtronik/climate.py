@@ -5,7 +5,6 @@ from typing import Any, Final
 
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import HVACAction, HVACMode, PRESET_AWAY, PRESET_BOOST, PRESET_NONE
-from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.components.water_heater import ATTR_TEMPERATURE
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
@@ -36,7 +35,6 @@ from .const import (CONF_CALCULATIONS, CONF_CONTROL_MODE_HOME_ASSISTANT,
                     LUX_STATUS_HEATING, LUX_STATUS_HEATING_EXTERNAL_SOURCE,
                     LUX_STATUS_SWIMMING_POOL_SOLAR,
                     PRESET_SECOND_HEATSOURCE, LuxMode)
-from .helpers.helper import get_sensor_text
 
 # endregion Imports
 
@@ -72,34 +70,29 @@ async def async_setup_entry(
         LOGGER.warning("climate.async_setup_platform no luxtronik!")
         return False
 
-    # Build Sensor names with local language:
-    lang = hass.config.language
     entities = []
 
     deviceInfoHeating = hass.data[f"{DOMAIN}_DeviceInfo_Heating"]
     if deviceInfoHeating is not None:
-        text_heating = get_sensor_text(lang, 'heating')
         entities += [
             LuxtronikHeatingThermostat(
-                luxtronik, deviceInfoHeating, name=text_heating, control_mode_home_assistant=control_mode_home_assistant,
+                luxtronik, deviceInfoHeating, control_mode_home_assistant=control_mode_home_assistant,
                 current_temperature_sensor=ha_sensor_indoor_temperature)
         ]
 
     deviceInfoDomesticWater = hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"]
     if deviceInfoDomesticWater is not None:
-        text_domestic_water = get_sensor_text(lang, 'domestic_water')
         entities += [
             LuxtronikDomesticWaterThermostat(
-                luxtronik, deviceInfoDomesticWater, name=text_domestic_water, control_mode_home_assistant=control_mode_home_assistant,
+                luxtronik, deviceInfoDomesticWater, control_mode_home_assistant=control_mode_home_assistant,
                 current_temperature_sensor=LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE)
         ]
 
     deviceInfoCooling = hass.data[f"{DOMAIN}_DeviceInfo_Cooling"]
     if deviceInfoCooling is not None:
-        text_cooling = get_sensor_text(lang, 'cooling')
         entities += [
             LuxtronikCoolingThermostat(
-                luxtronik, deviceInfoCooling, name=text_cooling, control_mode_home_assistant=control_mode_home_assistant,
+                luxtronik, deviceInfoCooling, control_mode_home_assistant=control_mode_home_assistant,
                 current_temperature_sensor=LUX_SENSOR_OUTDOOR_TEMPERATURE)
         ]
 
@@ -110,6 +103,9 @@ async def async_setup_entry(
 class LuxtronikThermostat(ClimateEntity, RestoreEntity):
     """Representation of a Luxtronik Thermostat device."""
     # region Properties / Init
+    _attr_has_entity_name = True
+    _attr_name = None
+    _key: str = None
     _active = False
 
     _attr_target_temperature = None
@@ -137,14 +133,12 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
     _last_lux_mode: LuxMode = None
     _last_hvac_action = None
 
-    def __init__(self, luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo, name: str, control_mode_home_assistant: bool, current_temperature_sensor: str):
+    def __init__(self, luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo, control_mode_home_assistant: bool, current_temperature_sensor: str):
         self._luxtronik = luxtronik
         self._attr_device_info = deviceInfo
-        self._attr_name = name
+        self._attr_unique_id = f"{luxtronik.unique_id}_{self._key}"
         self._control_mode_home_assistant = control_mode_home_assistant
         self._current_temperature_sensor = current_temperature_sensor
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            f"{DOMAIN}_{self._attr_unique_id}")
     # endregion Properties / Init
 
     # region Temperatures
@@ -331,8 +325,8 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
 
 
 class LuxtronikDomesticWaterThermostat(LuxtronikThermostat):
-    _attr_unique_id: Final = 'domestic_water'
-    _attr_device_class: Final = f"{DOMAIN}__{_attr_unique_id}"
+    _key: Final = 'domestic_water'
+    _attr_device_class: Final = f"{DOMAIN}__{_key}"
 
     _attr_target_temperature_step = 1.0
     _attr_min_temp = 40.0
@@ -357,8 +351,8 @@ class LuxtronikDomesticWaterThermostat(LuxtronikThermostat):
 
 
 class LuxtronikHeatingThermostat(LuxtronikThermostat):
-    _attr_unique_id = 'heating'
-    _attr_device_class: Final = f"{DOMAIN}__{_attr_unique_id}"
+    _key: Final = 'heating'
+    _attr_device_class: Final = f"{DOMAIN}__{_key}"
 
     # _attr_target_temperature = 20.5
     _attr_target_temperature_step = 0.1
@@ -381,9 +375,9 @@ class LuxtronikHeatingThermostat(LuxtronikThermostat):
 
 
 class LuxtronikCoolingThermostat(LuxtronikThermostat):
-    _attr_unique_id = 'cooling'
+    _key: Final = 'cooling'
     _attr_icon = 'mdi:snowflake'
-    _attr_device_class: Final = f"{DOMAIN}__{_attr_unique_id}"
+    _attr_device_class: Final = f"{DOMAIN}__{_key}"
 
     _target_temperature_sensor = LUX_SENSOR_COOLING_THRESHOLD
     _attr_target_temperature_step = 0.5

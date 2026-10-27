@@ -90,21 +90,24 @@ async def async_setup_platform(
                     if not sensor_cfg.get(CONF_ICON)
                     else sensor_cfg.get(CONF_ICON)
                 )
-                entities += [
-                    LuxtronikSensor(
-                        luxtronik=luxtronik,
-                        device_info=device_info,
-                        sensor_key=f"{group}.{sensor_id}",
-                        unique_id=sensor_id,
-                        name=name,
-                        icon=icon,
-                        device_class=DEVICE_CLASSES.get(
-                            sensor.measurement_type, DEFAULT_DEVICE_CLASS
-                        ),
-                        state_class=None,
-                        unit_of_measurement=UNITS.get(sensor.measurement_type),
-                    )
-                ]
+                entity = LuxtronikSensor(
+                    luxtronik=luxtronik,
+                    device_info=device_info,
+                    sensor_key=f"{group}.{sensor_id}",
+                    unique_id=sensor_id,
+                    icon=icon,
+                    device_class=DEVICE_CLASSES.get(
+                        sensor.measurement_type, DEFAULT_DEVICE_CLASS
+                    ),
+                    state_class=None,
+                    unit_of_measurement=UNITS.get(sensor.measurement_type),
+                )
+                # Keep the unique_id and name of sensors configured in YAML.
+                entity._attr_has_entity_name = False
+                entity._attr_translation_key = None
+                entity._attr_name = name
+                entity._attr_unique_id = ENTITY_ID_FORMAT.format(f"{DOMAIN}_{sensor_id}")
+                entities += [entity]
             else:
                 LOGGER.warning(
                     "%s.sensor.async_setup_platform: Invalid Luxtronik ID %s in group %s",
@@ -132,32 +135,6 @@ async def async_setup_entry(
 
     device_info = hass.data[f"{DOMAIN}_DeviceInfo"]
 
-    # region: Build Sensor names with local language:
-    lang = hass.config.language
-    hass.data[f"{DOMAIN}_language"] = lang
-    text_heatpump = get_sensor_text(lang, "heatpump")
-    text_time = get_sensor_text(lang, "time")
-    text_temp = get_sensor_text(lang, "temperature")
-    text_external = get_sensor_text(lang, "external")
-    text_pump = get_sensor_text(lang, "pump")
-    text_heat_source_output = get_sensor_text(lang, "heat_source_output")
-    text_heat_source_input = get_sensor_text(lang, "heat_source_input")
-    text_outdoor = get_sensor_text(lang, "outdoor")
-    text_average = get_sensor_text(lang, "average")
-    text_compressor_impulses = get_sensor_text(lang, "compressor_impulses")
-    text_operation_hours = get_sensor_text(lang, "operation_hours")
-    text_heat_amount_counter = get_sensor_text(lang, "heat_amount_counter")
-    text_current_heat_output = get_sensor_text(lang, "current_heat_output")
-    text_hot_gas = get_sensor_text(lang, "hot_gas")
-    text_suction_compressor = get_sensor_text(lang, "suction_compressor")
-    text_suction_evaporator = get_sensor_text(lang, "suction_evaporator")
-    text_compressor = get_sensor_text(lang, "compressor")
-    text_overheating = get_sensor_text(lang, "overheating")
-    text_overheating_target = get_sensor_text(lang, "overheating_target")
-    text_high_pressure = get_sensor_text(lang, "high_pressure")
-    text_low_pressure = get_sensor_text(lang, "low_pressure")
-    text_operation_hours_additional_heat_generator = get_sensor_text(lang, "operation_hours_additional_heat_generator")
-    text_analog_out = get_sensor_text(lang, "analog_out")
     # entities: list[LuxtronikSensor] = [
     #     LuxtronikStatusSensor(hass, luxtronik, device_info, description)
     #     for description in GLOBAL_STATUS_SENSOR_TYPES
@@ -169,7 +146,6 @@ async def async_setup_entry(
     #         for description in GLOBAL_SENSOR_TYPES
     #     ]
     # )
-    # endregion: Build Sensor names with local language:
 
     entities = [
         LuxtronikStatusSensor(
@@ -177,7 +153,6 @@ async def async_setup_entry(
             device_info,
             LUX_SENSOR_STATUS,
             "status",
-            text_heatpump,
             LUX_STATE_ICON_MAP,
             f"{DOMAIN}__status",
             None,
@@ -189,7 +164,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_HauptMenuStatus_Zeit",
             "status_time",
-            f"Status {text_time}",
             "mdi:timer-sand",
             device_class=None,
             state_class=None,
@@ -219,7 +193,6 @@ async def async_setup_entry(
             device_info,
             LUX_SENSOR_STATUS1,
             "status_line_1",
-            "Status 1",
             "mdi:numeric-1-circle",
             f"{DOMAIN}__status_line_1",
             None,
@@ -232,7 +205,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_HauptMenuStatus_Zeile2",
             "status_line_2",
-            "Status 2",
             "mdi:numeric-2-circle",
             f"{DOMAIN}__status_line_2",
             None,
@@ -245,7 +217,6 @@ async def async_setup_entry(
             device_info,
             LUX_SENSOR_STATUS3,
             "status_line_3",
-            "Status 3",
             "mdi:numeric-3-circle",
             f"{DOMAIN}__status_line_3",
             None,
@@ -258,7 +229,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_Temperatur_TWE",
             "heat_source_input_temperature",
-            f"{text_heat_source_input}",
             entity_category=None,
         ),
         LuxtronikSensor(
@@ -266,7 +236,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_Temperatur_TA",
             "outdoor_temperature",
-            f"{text_outdoor} {text_temp}",
             entity_category=None,
         ),
         LuxtronikSensor(
@@ -274,7 +243,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_Mitteltemperatur",
             "outdoor_temperature_average",
-            f"{text_average} {text_outdoor} {text_temp}",
             entity_category=None,
         ),
         LuxtronikSensor(
@@ -282,7 +250,6 @@ async def async_setup_entry(
             device_info,
             sensor_key="calculations.ID_WEB_Zaehler_BetrZeitImpVD1",
             unique_id="compressor_impulses",
-            name=f"{text_compressor_impulses}",
             icon="mdi:pulse",
             device_class=None,
             state_class=SensorStateClass.TOTAL_INCREASING,
@@ -294,7 +261,6 @@ async def async_setup_entry(
             device_info,
             sensor_key="calculations.ID_WEB_Zaehler_BetrZeitVD1",
             unique_id="operation_hours_compressor1",
-            name=f"{text_operation_hours} {text_compressor} 1",
             icon="mdi:timer-sand",
             device_class=None,
             state_class=SensorStateClass.TOTAL_INCREASING,
@@ -311,7 +277,6 @@ async def async_setup_entry(
                 device_info,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitVD2",
                 unique_id="operation_hours_compressor2",
-                name=f"{text_operation_hours} {text_compressor} 2",
                 icon="mdi:timer-sand",
                 device_class=None,
                 state_class=SensorStateClass.TOTAL_INCREASING,
@@ -324,7 +289,6 @@ async def async_setup_entry(
                 device_info,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitImpVD2",
                 unique_id="compressor_impulses2",
-                name=f"{text_compressor_impulses} 2",
                 icon="mdi:pulse",
                 device_class=None,
                 state_class=SensorStateClass.TOTAL_INCREASING,
@@ -339,7 +303,6 @@ async def async_setup_entry(
             device_info,
             sensor_key="calculations.ID_WEB_Zaehler_BetrZeitWP",
             unique_id="operation_hours",
-            name=f"{text_operation_hours}",
             icon="mdi:timer-sand",
             device_class=None,
             state_class=SensorStateClass.TOTAL_INCREASING,
@@ -352,7 +315,6 @@ async def async_setup_entry(
             device_info,
             sensor_key="calculations.ID_WEB_WMZ_Seit",
             unique_id="heat_amount_counter",
-            name=f"{text_heat_amount_counter}",
             icon="mdi:lightning-bolt-circle",
             device_class=SensorDeviceClass.ENERGY,
             state_class=SensorStateClass.TOTAL_INCREASING,
@@ -365,7 +327,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_Temperatur_THG",
             "hot_gas_temperature",
-            f"{text_hot_gas}",
             entity_category=None,
         ),
         LuxtronikSensor(
@@ -373,7 +334,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_LIN_ANSAUG_VERDICHTER",
             "suction_compressor_temperature",
-            f"{text_suction_compressor}",
             entity_category=None,
             entity_registry_enabled_default=False,
         ),
@@ -382,7 +342,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_LIN_ANSAUG_VERDAMPFER",
             "suction_evaporator_temperature",
-            f"{text_suction_evaporator}",
             entity_category=None,
             entity_registry_enabled_default=False,
         ),
@@ -391,7 +350,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_LIN_VDH",
             "compressor_heating_temperature",
-            text_compressor,
             entity_category=None,
         ),
         LuxtronikSensor(
@@ -399,7 +357,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_LIN_UH",
             "overheating_temperature",
-            f"{text_overheating}",
             device_class=None,
             entity_category=None,
             unit_of_measurement=UnitOfTemperature.KELVIN,
@@ -410,7 +367,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_LIN_UH_Soll",
             "overheating_target_temperature",
-            f"{text_overheating_target}",
             entity_category=None,
             unit_of_measurement=UnitOfTemperature.KELVIN,
             entity_registry_enabled_default=False,
@@ -420,7 +376,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_LIN_HD",
             "high_pressure",
-            f"{text_high_pressure}",
             entity_category=None,
             unit_of_measurement=UnitOfPressure.BAR,
             entity_registry_enabled_default=False,
@@ -432,7 +387,6 @@ async def async_setup_entry(
             device_info,
             "calculations.ID_WEB_LIN_ND",
             "low_pressure",
-            f"{text_low_pressure}",
             entity_category=None,
             unit_of_measurement=UnitOfPressure.BAR,
             entity_registry_enabled_default=False,
@@ -444,7 +398,6 @@ async def async_setup_entry(
             device_info,
             sensor_key="calculations.ID_WEB_Zaehler_BetrZeitZWE1",
             unique_id="operation_hours_additional_heat_generator",
-            name=text_operation_hours_additional_heat_generator,
             icon="mdi:timer-sand",
             device_class=None,
             state_class=SensorStateClass.TOTAL_INCREASING,
@@ -457,7 +410,6 @@ async def async_setup_entry(
             device_info,
             sensor_key="calculations.ID_WEB_AnalogOut1",
             unique_id="analog_out1",
-            name=f"{text_analog_out} 1",
             icon="mdi:alpha-v-circle-outline",
             device_class=SensorDeviceClass.VOLTAGE,
             unit_of_measurement=UnitOfElectricPotential.VOLT,
@@ -469,7 +421,6 @@ async def async_setup_entry(
             device_info,
             sensor_key="calculations.ID_WEB_AnalogOut2",
             unique_id="analog_out2",
-            name=f"{text_analog_out} 2",
             icon="mdi:alpha-v-circle-outline",
             device_class=SensorDeviceClass.VOLTAGE,
             unit_of_measurement=UnitOfElectricPotential.VOLT,
@@ -483,9 +434,7 @@ async def async_setup_entry(
             device_info=device_info,
             sensor_key="Switchoff",
             unique_id="switchoff_reason",
-            name="Switchoff Reason",
             icon="mdi:electric-switch",
-            translation_key="switchoff_reason",
             unit_of_measurement=None,
             state_class=None,
             device_class=None,
@@ -498,9 +447,7 @@ async def async_setup_entry(
             device_info=device_info,
             sensor_key="calculations.ID_WEB_ERROR_Nr0",
             unique_id="error_reason",
-            name="Error Reason",
             icon="mdi:alert",
-            translation_key="error_reason",
             unit_of_measurement=None,
             state_class=None,
             device_class=None,
@@ -514,20 +461,17 @@ async def async_setup_entry(
                 device_info,
                 sensor_key="calculations.Heat_Output",
                 unique_id="current_heat_output",
-                name=f"{text_current_heat_output}",
                 icon="mdi:lightning-bolt-circle",
                 device_class=SensorDeviceClass.POWER,
                 unit_of_measurement=UnitOfPower.WATT,
                 entity_category=EntityCategory.DIAGNOSTIC,
             ),
         ]
-    text_additional_heat_generator_amount_counter = get_sensor_text(lang, "additional_heat_generator_amount_counter")
     add_sensor_if_active(luxtronik, entities, "visibilities.ID_Visi_Waermemenge_ZWE", LuxtronikSensor(
         luxtronik,
         device_info,
         sensor_key="parameters.ID_Waermemenge_ZWE",
         unique_id="additional_heat_generator_amount_counter",
-        name=text_additional_heat_generator_amount_counter,
         icon="mdi:lightning-bolt-circle",
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -542,8 +486,7 @@ async def async_setup_entry(
                 luxtronik,
                 device_info,
                 "calculations.ID_WEB_Freq_VD",
-                "pump frequency",
-                f"{text_pump} Frequency",
+                "pump_frequency",
                 entity_category=None,
                 icon="mdi:sine-wave",
                 unit_of_measurement='Hz',
@@ -555,7 +498,6 @@ async def async_setup_entry(
                 device_info,
                 "calculations.ID_WEB_Temperatur_TWA",
                 "heat_source_output_temperature",
-                f"{text_heat_source_output}",
                 entity_category=None,
                 entity_registry_enabled_default=False,
             ),
@@ -563,21 +505,14 @@ async def async_setup_entry(
 
     device_info_heating = hass.data[f"{DOMAIN}_DeviceInfo_Heating"]
     if device_info_heating is not None:
-        text_flow_in = get_sensor_text(lang, "flow_in")
-        text_flow_out = get_sensor_text(lang, "flow_out")
-        text_target = get_sensor_text(lang, "target")
-        text_operation_hours_heating = get_sensor_text(lang, "operation_hours_heating")
-        text_heat_amount_heating = get_sensor_text(lang, "heat_amount_heating")
         has_room_temp = luxtronik.get_value("parameters.ID_Einst_RFVEinb_akt") != 0
         if has_room_temp:
-            text_room = get_sensor_text(lang, "room")
             entities += [
                 LuxtronikSensor(
                     luxtronik,
                     device_info_heating,
                     "calculations.ID_WEB_RBE_RT_Ist",
                     "room_temperature",
-                    f"{text_room}",
                     entity_category=None,
                 ),
                 LuxtronikSensor(
@@ -585,7 +520,6 @@ async def async_setup_entry(
                     device_info_heating,
                     "calculations.ID_WEB_RBE_RT_Soll",
                     "room_target_temperature",
-                    f"{text_room} {text_target}",
                     entity_category=None,
                 ),
             ]
@@ -596,7 +530,6 @@ async def async_setup_entry(
                 device_info_heating,
                 "calculations.ID_WEB_Temperatur_TVL",
                 "flow_in_temperature",
-                f"{text_flow_in}",
                 "mdi:waves-arrow-right",
                 entity_category=None,
                 extra_attributes={
@@ -608,7 +541,6 @@ async def async_setup_entry(
                 device_info_heating,
                 "calculations.ID_WEB_Temperatur_TRL",
                 "flow_out_temperature",
-                f"{text_flow_out}",
                 "mdi:waves-arrow-left",
                 entity_category=None,
             ),
@@ -617,7 +549,6 @@ async def async_setup_entry(
                 device_info_heating,
                 "calculations.ID_WEB_Sollwert_TRL_HZ",
                 "flow_out_temperature_target",
-                f"{text_flow_out} {text_target}",
                 entity_category=None,
             ),
             LuxtronikSensor(
@@ -625,7 +556,6 @@ async def async_setup_entry(
                 device_info_heating,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitHz",
                 unique_id="operation_hours_heating",
-                name=f"{text_operation_hours_heating}",
                 icon="mdi:timer-sand",
                 device_class=None,
                 state_class=SensorStateClass.TOTAL_INCREASING,
@@ -638,7 +568,6 @@ async def async_setup_entry(
                 device_info_heating,
                 sensor_key="calculations.ID_WEB_WMZ_Heizung",
                 unique_id="heat_amount_heating",
-                name=f"{text_heat_amount_heating}",
                 icon="mdi:lightning-bolt-circle",
                 device_class=SensorDeviceClass.ENERGY,
                 state_class=SensorStateClass.TOTAL_INCREASING,
@@ -651,7 +580,6 @@ async def async_setup_entry(
             device_info_heating,
             sensor_key="parameters.Unknown_Parameter_1136",
             unique_id="heat_energy_input",
-            name="Heat energy input",
             icon="mdi:circle-slice-3",
             device_class=SensorDeviceClass.ENERGY,
             state_class=SensorStateClass.TOTAL_INCREASING,
@@ -665,22 +593,12 @@ async def async_setup_entry(
         device_info_heating,
         "calculations.ID_WEB_Temperatur_TRL_ext",
         "flow_out_temperature_external",
-        f"{text_flow_out} ({text_external})",
         "mdi:waves-arrow-right",
         entity_category=None)
     )
 
     device_info_domestic_water = hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"]
     if device_info_domestic_water is not None:
-        text_collector = get_sensor_text(lang, "collector")
-        text_buffer = get_sensor_text(lang, "buffer")
-        text_domestic_water = get_sensor_text(lang, "domestic_water")
-        text_operation_hours_domestic_water = get_sensor_text(
-            lang, "operation_hours_domestic_water"
-        )
-        text_heat_amount_domestic_water = get_sensor_text(
-            lang, "heat_amount_domestic_water"
-        )
 
         entities += [
             LuxtronikSensor(
@@ -688,7 +606,6 @@ async def async_setup_entry(
                 device_info_domestic_water,
                 "calculations.ID_WEB_Temperatur_TBW",
                 "domestic_water_temperature",
-                f"{text_domestic_water}",
                 "mdi:coolant-temperature",
                 entity_category=None,
             ),
@@ -697,7 +614,6 @@ async def async_setup_entry(
                 device_info_domestic_water,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitBW",
                 unique_id="operation_hours_domestic_water",
-                name=f"{text_operation_hours_domestic_water}",
                 icon="mdi:timer-sand",
                 device_class=None,
                 state_class=SensorStateClass.TOTAL_INCREASING,
@@ -710,7 +626,6 @@ async def async_setup_entry(
                 device_info_domestic_water,
                 sensor_key="calculations.ID_WEB_WMZ_Brauchwasser",
                 unique_id="heat_amount_domestic_water",
-                name=f"{text_heat_amount_domestic_water}",
                 icon="mdi:lightning-bolt-circle",
                 device_class=SensorDeviceClass.ENERGY,
                 state_class=SensorStateClass.TOTAL_INCREASING,
@@ -723,7 +638,6 @@ async def async_setup_entry(
             device_info_domestic_water,
             sensor_key="parameters.Unknown_Parameter_1137",
             unique_id="domestic_water_energy_input",
-            name="Domestic water energy input",
             icon="mdi:circle-slice-3",
             device_class=SensorDeviceClass.ENERGY,
             state_class=SensorStateClass.TOTAL_INCREASING,
@@ -742,7 +656,6 @@ async def async_setup_entry(
                     device_info_domestic_water,
                     "calculations.ID_WEB_Temperatur_TSK",
                     "solar_collector_temperature",
-                    f"Solar {text_collector}",
                     "mdi:solar-panel-large",
                     entity_category=None,
                 ),
@@ -754,20 +667,17 @@ async def async_setup_entry(
                     device_info_domestic_water,
                     "calculations.ID_WEB_Temperatur_TSS",
                     "solar_buffer_temperature",
-                    f"Solar {text_buffer}",
                     "mdi:propane-tank-outline",
                     entity_category=None,
                 ),
             ]
         # if luxtronik.get_value("parameters.ID_BSTD_Solar") > 0:
-            text_operation_hours_solar = get_sensor_text(lang, "operation_hours_solar")
             entities += [
                 LuxtronikSensor(
                     luxtronik,
                     device_info_domestic_water,
                     sensor_key="parameters.ID_BSTD_Solar",
                     unique_id="operation_hours_solar",
-                    name=f"{text_operation_hours_solar}",
                     icon="mdi:timer-sand",
                     device_class=None,
                     state_class=SensorStateClass.TOTAL_INCREASING,
@@ -779,14 +689,12 @@ async def async_setup_entry(
 
     deviceInfoCooling = hass.data[f"{DOMAIN}_DeviceInfo_Cooling"]
     if deviceInfoCooling is not None:
-        text_operation_hours_cooling = get_sensor_text(lang, "operation_hours_cooling")
         entities += [
             LuxtronikSensor(
                 luxtronik,
                 deviceInfoCooling,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitKue",
                 unique_id="operation_hours_cooling",
-                name=f"{text_operation_hours_cooling}",
                 icon="mdi:timer-sand",
                 device_class=None,
                 state_class=SensorStateClass.TOTAL_INCREASING,
@@ -823,6 +731,7 @@ async def async_setup_entry(
 class LuxtronikSensor(SensorEntity, RestoreEntity):
     """Representation of a Luxtronik Sensor."""
     _attr_is_on = True
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -830,7 +739,6 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
         device_info: DeviceInfo,
         sensor_key: str,
         unique_id: str,
-        name: str,
         icon: str = "mdi:thermometer",
         device_class: SensorDeviceClass = SensorDeviceClass.TEMPERATURE,
         state_class: SensorStateClass = SensorStateClass.MEASUREMENT,
@@ -848,10 +756,9 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
 #        super(LuxtronikSensor, self).__init__(*args)
         self._luxtronik = luxtronik
 
-        self.entity_id = ENTITY_ID_FORMAT.format(f"{DOMAIN}_{unique_id}")
-        self._attr_unique_id = self.entity_id
+        self._attr_unique_id = f"{luxtronik.unique_id}_{unique_id}"
+        self._attr_translation_key = unique_id
         self._attr_device_class = device_class
-        self._attr_name = name
         self._icon = icon
         self._attr_native_unit_of_measurement = unit_of_measurement
         self._sensor_key = sensor_key
@@ -952,9 +859,8 @@ class LuxtronikIndexStatusSensor(LuxtronikSensor):
     # _min_index = 0
     # _max_index = 4
 
-    def __init__(self, key_index: str, key_timestamp_template: str, translation_key: str, extra_value_attributes: list = None, *args, **kwargs) -> None:
+    def __init__(self, key_index: str, key_timestamp_template: str, extra_value_attributes: list = None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._attr_translation_key = translation_key
         self._key_index = key_index
         self._key_timestamp_template = key_timestamp_template
         self._key_template = self._sensor_key

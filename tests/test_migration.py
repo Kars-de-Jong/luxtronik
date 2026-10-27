@@ -21,6 +21,6 @@ async def test_migrate_v1(hass):
     with patch("custom_components.luxtronik.LuxtronikDevice.connect", return_value=luxtronik):
         assert await async_migrate_entry(hass, entry)
 
-    assert entry.version == 2
+    assert entry.version == 3
     assert entry.unique_id == SERIAL
     assert entry.title == "Alpha Innotec LWD 2311-1234"

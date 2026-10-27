@@ -29,7 +29,7 @@ from .luxtronik_device import LuxtronikDevice
 class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a Luxtronik heatpump controller config flow."""
 
-    VERSION = 2
+    VERSION = 3
     _hassio_discovery = None
     _discovery_host = None
     _discovery_port = None
