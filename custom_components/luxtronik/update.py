@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Final
 
 import requests
@@ -22,7 +22,8 @@ from .const import (DOWNLOAD_PORTAL_URL, LOGGER,
                     LUX_MODELS_AlphaInnotec, LUX_MODELS_Novelan,
                     LUX_MODELS_Other)
 
-MIN_TIME_BETWEEN_UPDATES: Final = timedelta(hours=1)
+# The download portal is queried on every poll; firmware releases are rare.
+SCAN_INTERVAL: Final = timedelta(hours=1)
 
 
 @dataclass
@@ -63,7 +64,6 @@ class LuxtronikUpdateEntity(UpdateEntity):
     _attr_has_entity_name = True
     _attr_supported_features: UpdateEntityFeature = UpdateEntityFeature.RELEASE_NOTES
     __firmware_version_available = None
-    __firmware_version_available_last_request = None
 
     def __init__(
         self,
@@ -127,16 +127,9 @@ class LuxtronikUpdateEntity(UpdateEntity):
             return 6
         return None
 
-    # @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self) -> None:
         """Update sensor values."""
-        # self._attr_state = self.luxtronik_device.get_value(self.entity_description.luxtronik_key)
-        if (
-            self.__firmware_version_available_last_request is None
-            or self.__firmware_version_available_last_request
-            < datetime.utcnow().timestamp() - 3600
-        ):
-            self._request_available_firmware_version()
+        self._request_available_firmware_version()
 
     def _request_available_firmware_version(self) -> None:
         def do_request_available_firmware_version(self, download_id: int):
@@ -149,9 +142,6 @@ class LuxtronikUpdateEntity(UpdateEntity):
                 )
                 header_content_disposition = response.headers["content-disposition"]
                 filename = re.findall("filename=(.+)", header_content_disposition)[0]
-                self.__firmware_version_available_last_request = (
-                    datetime.utcnow().timestamp()
-                )
                 # Filename e.g.: wp2reg-V2.88.1-9086
                 # Extract 'V2.88.1' from 'wp2reg-V2.88.1-9086'
                 self.__firmware_version_available = filename.split("-", 1)[1]

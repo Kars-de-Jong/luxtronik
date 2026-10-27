@@ -84,6 +84,8 @@ ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION: Final = "Last thermal desi
 
 
 MIN_TIME_BETWEEN_UPDATES: Final = timedelta(seconds=10)
+# Shorter throttle than scan interval, so every scan cycle reads fresh data.
+SCAN_INTERVAL_DEVICE: Final = timedelta(seconds=30)
 
 PRESET_AUTO: Final = 'automatic'
 PRESET_SECOND_HEATSOURCE: Final = "second_heatsource"

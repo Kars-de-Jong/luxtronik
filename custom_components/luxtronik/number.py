@@ -31,11 +31,14 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION,
                     LUX_SENSOR_HEATING_ROOM_TEMPERATURE_IMPACT_FACTOR,
                     LUX_SENSOR_HEATING_TARGET_CORRECTION,
                     LUX_SENSOR_HEATING_THRESHOLD_TEMPERATURE,
-                    LUX_SENSOR_PUMP_OPTIMIZATION_TIME)
+                    LUX_SENSOR_PUMP_OPTIMIZATION_TIME,
+                    SCAN_INTERVAL_DEVICE)
 
 # endregion Imports
 
 # region Constants
+# The device read is throttled, so all entities share one controller read.
+SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 # endregion Constants
 
 # region Setup

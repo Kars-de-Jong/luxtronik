@@ -30,7 +30,8 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, ATTR_STATUS_TEXT,
                     LUX_STATUS3_WORKAROUND, LUX_STATUS_DOMESTIC_WATER,
                     LUX_STATUS_EVU, LUX_STATUS_HEATING, LUX_STATUS_NO_REQUEST,
                     LUX_STATUS_COOLING,
-                    LUX_STATUS_THERMAL_DESINFECTION, SECOUND_TO_HOUR_FACTOR,
+                    LUX_STATUS_THERMAL_DESINFECTION, SCAN_INTERVAL_DEVICE,
+                    SECOUND_TO_HOUR_FACTOR,
                     UNITS, LuxMode)
 from .helpers.helper import get_sensor_text, get_sensor_value_text
 from .luxtronik_device import LuxtronikDevice
@@ -39,6 +40,8 @@ from .model import LuxtronikConfigEntry, get_runtime_data
 # endregion Imports
 
 # region Constants
+# The device read is throttled, so all entities share one controller read.
+SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 # endregion Constants
 
 # region Setup

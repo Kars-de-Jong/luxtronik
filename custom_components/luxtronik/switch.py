@@ -15,11 +15,13 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, LOGGER,
                     LUX_SENSOR_EFFICIENCY_PUMP, LUX_SENSOR_HEATING_THRESHOLD,
                     LUX_SENSOR_MODE_COOLING, LUX_SENSOR_MODE_DOMESTIC_WATER,
                     LUX_SENSOR_MODE_HEATING, LUX_SENSOR_PUMP_OPTIMIZATION,
-                    LUX_SENSOR_REMOTE_MAINTENANCE, LuxMode)
+                    LUX_SENSOR_REMOTE_MAINTENANCE, SCAN_INTERVAL_DEVICE, LuxMode)
 
 # endregion Imports
 
 # region Constants
+# The device read is throttled, so all entities share one controller read.
+SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 # endregion Constants
 
 # region Setup

@@ -25,13 +25,15 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
                     LUX_BINARY_SENSOR_CIRCULATION_PUMP_HEATING,
                     LUX_BINARY_SENSOR_DOMESTIC_WATER_RECIRCULATION_PUMP,
                     LUX_BINARY_SENSOR_EVU_UNLOCKED,
-                    LUX_BINARY_SENSOR_SOLAR_PUMP)
+                    LUX_BINARY_SENSOR_SOLAR_PUMP, SCAN_INTERVAL_DEVICE)
 from .luxtronik_device import LuxtronikDevice
 from .model import LuxtronikConfigEntry, get_runtime_data
 
 # endregion Imports
 
 # region Constants
+# The device read is throttled, so all entities share one controller read.
+SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_SENSORS): vol.All(

@@ -34,11 +34,13 @@ from .const import (CONF_CALCULATIONS, CONF_CONTROL_MODE_HOME_ASSISTANT,
                     LUX_STATUS_DOMESTIC_WATER,
                     LUX_STATUS_HEATING, LUX_STATUS_HEATING_EXTERNAL_SOURCE,
                     LUX_STATUS_SWIMMING_POOL_SOLAR,
-                    PRESET_SECOND_HEATSOURCE, LuxMode)
+                    PRESET_SECOND_HEATSOURCE, SCAN_INTERVAL_DEVICE, LuxMode)
 
 # endregion Imports
 
 # region Constants
+# Polling refreshes the state from the shared device data read by the other platforms.
+SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 SUPPORT_FLAGS: Final = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
 OPERATION_LIST: Final = [HVACMode.AUTO, HVACMode.OFF]
 
