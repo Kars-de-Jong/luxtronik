@@ -114,17 +114,13 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Get default options flow."""
-        return LuxtronikOptionsFlowHandler(config_entry)
+        return LuxtronikOptionsFlowHandler()
 
 
 class LuxtronikOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle a Luxtronik options flow."""
 
     _sensor_prefix = DOMAIN
-
-    def __init__(self, config_entry):
-        """Initialize."""
-        self.config_entry = config_entry
 
     def _get_value(self, key: str, default=None):
         return self.config_entry.options.get(
