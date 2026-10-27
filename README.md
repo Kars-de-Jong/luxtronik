@@ -29,6 +29,7 @@ This integration works locally. It's only necessary to connect the Luxtronik con
 4.1 [Energy use  ](#41-energy-use)  
 4.2 [Additional sensors (advanced)  ](#42-additional-sensors-advanced)  
 5. [Actions  ](#5-actions)  
+6. [Removal  ](#6-removal)  
 
 ## 1. Prerequisites
 
@@ -280,6 +281,18 @@ The controller has over 1100 parameters, but only a small number of them have a 
 
 > ⚠️ The integration does not check the value before writing it. Before changing a parameter it is smart to first read the current value and note it somewhere in case you want to set it back to its original value.
 All parameters can be configured as sensors and read that way (see [Additional sensors](#42-additional-sensors-advanced)).
+
+## 6. Removal
+
+1. Go to `Settings -> Devices & services` and open `Luxtronik`.
+2. Select the menu (three dots) next to the heatpump and choose `Delete`. This removes the heatpump with its devices and entities from Home Assistant. The heatpump itself is not changed: parameters written with the [`luxtronik2.write` action](#5-actions) keep their current value on the controller.
+3. If you added [additional sensors](#42-additional-sensors-advanced), remove the `sensor` and `binary_sensor` entries with `platform: luxtronik2` from your `configuration.yaml`.
+4. Remove the files:
+   - HACS: go to `HACS`, open the menu (three dots) next to `Luxtronik` and choose `Remove`.
+   - Manual: delete the folder `config/custom_components/luxtronik`.
+5. Restart Home Assistant (`Settings -> System -> Restart`).
+
+Optionally, remove the custom repository from HACS: select `Custom repositories` from the menu (three dots) in the top right and delete `https://github.com/Kars-de-Jong/luxtronik`.
 
 ## Some Screenshots
 ![image](https://user-images.githubusercontent.com/32298537/178588098-09e960f0-f849-475c-9afa-cf4a78e5d76d.png)
