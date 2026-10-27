@@ -60,9 +60,11 @@ async def async_setup_entry(
 ) -> None:
     """Set up a Luxtronik thermostat from ConfigEntry."""
     LOGGER.info("climate.async_setup_entry entry: '%s'", config_entry)
-    control_mode_home_assistant = config_entry.options.get(
+    # Options override the values stored in data during the initial setup.
+    settings = {**config_entry.data, **config_entry.options}
+    control_mode_home_assistant = settings.get(
         CONF_CONTROL_MODE_HOME_ASSISTANT)
-    ha_sensor_indoor_temperature = config_entry.options.get(
+    ha_sensor_indoor_temperature = settings.get(
         CONF_HA_SENSOR_INDOOR_TEMPERATURE)
 
     luxtronik = config_entry.runtime_data.device

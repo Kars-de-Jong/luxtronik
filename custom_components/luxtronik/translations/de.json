@@ -13,14 +13,20 @@
     "step": {
       "user": {
         "data": {
-          "host": "Netzwerkname oder IP Adresse",
-          "port": "Port (meist 8888 oder 8889)",
-          "control_mode_home_assistant": "Experimentell!: Thermostat An/Aus-Status durch Home Assistant steuern. - D.h. wenn das Home Assistant Thermostat im Status Leerlauf ist, wird Luxtronik der Status Aus \u00fcbermittelt und Luxtronik kann dieses Element nicht starten.",
-          "use_legacy_sensor_ids": "Abw\u00e4rtskompatible Sensornamen erzeugen. (luxtronik.\u002a)",
-          "ha_sensor_indoor_temperature": "Home Assistant Sensor ID f\u00fcr die Innentemperatur",
-          "language_sensor_names": "Sprachk\u00fcrzel Sensornamen"
+          "host": "Host",
+          "port": "Port",
+          "control_mode_home_assistant": "Thermostate \u00fcber Home Assistant steuern (experimentell)",
+          "update_immediately_after_write": "Nach dem Schreiben sofort aktualisieren",
+          "ha_sensor_indoor_temperature": "Sensor f\u00fcr die Innentemperatur"
         },
-        "description": "Richte deine Luxtronik W\u00e4rmepumpe ein um sie zu \u00fcberwachen und zu steuern."
+        "description": "Richte deine Luxtronik W\u00e4rmepumpe ein um sie zu \u00fcberwachen und zu steuern.",
+        "data_description": {
+          "host": "Der Hostname oder die IP-Adresse deiner Luxtronik W\u00e4rmepumpensteuerung.",
+          "port": "Der Netzwerkport der Steuerung, meist 8888 oder 8889.",
+          "control_mode_home_assistant": "Wenn ein Home Assistant Thermostat im Leerlauf ist, wird der W\u00e4rmepumpe der Status Aus \u00fcbermittelt, sodass sie diesen Kreis nicht starten kann.",
+          "update_immediately_after_write": "Kurz nach dem Schreiben einer Einstellung alle Werte von der W\u00e4rmepumpe lesen, damit die \u00c4nderung ohne Warten auf die n\u00e4chste Aktualisierung sichtbar wird.",
+          "ha_sensor_indoor_temperature": "Die Home Assistant Sensor-Entit\u00e4t, die die aktuelle Innentemperatur f\u00fcr das Heizungsthermostat liefert."
+        }
       }
     }
   },
@@ -28,10 +34,12 @@
     "step": {
       "user": {
         "data": {
-          "control_mode_home_assistant": "Experimentell!: Thermostat An/Aus-Status durch Home Assistant steuern. - D.h. wenn das Home Assistant Thermostat im Status Leerlauf ist, wird Luxtronik der Status Aus \u00fcbermittelt und Luxtronik kann dieses Element nicht starten.",
-          "use_legacy_sensor_ids": "Abw\u00e4rtskompatible Sensornamen erzeugen. (luxtronik.\u002a)",
-          "ha_sensor_indoor_temperature": "Home Assistant Sensor ID f\u00fcr die Innentemperatur",
-          "language_sensor_names": "Sprachk\u00fcrzel Sensornamen"
+          "control_mode_home_assistant": "Thermostate \u00fcber Home Assistant steuern (experimentell)",
+          "ha_sensor_indoor_temperature": "Sensor f\u00fcr die Innentemperatur"
+        },
+        "data_description": {
+          "control_mode_home_assistant": "Wenn ein Home Assistant Thermostat im Leerlauf ist, wird der W\u00e4rmepumpe der Status Aus \u00fcbermittelt, sodass sie diesen Kreis nicht starten kann.",
+          "ha_sensor_indoor_temperature": "Die Home Assistant Sensor-Entit\u00e4t, die die aktuelle Innentemperatur f\u00fcr das Heizungsthermostat liefert."
         },
         "description": "Nach einer \u00c4nderung wird die Integration automatisch neu gestartet.",
         "title": "Einstellungen Luxtronik"

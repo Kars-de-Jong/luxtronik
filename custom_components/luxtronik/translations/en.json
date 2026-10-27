@@ -13,14 +13,20 @@
     "step": {
       "user": {
         "data": {
-          "host": "Hostname or ip address",
-          "port": "Network Port (Usually 8888 or 8889)",
-          "control_mode_home_assistant": "Experimental!: Control thermostat on / off status through Home Assistant. - I.e. if the Home Assistant thermostat is in the idle status, the status off is transmitted to Luxtronik and Luxtronik cannot start this element.",
-          "use_legacy_sensor_ids": "Create legacy sensor names. (luxtronik.\u002a)",
-          "ha_sensor_indoor_temperature": "Home Assistant sensor id for the current indoor temperature",
-          "language_sensor_names": "Language key Sensor Names"
+          "host": "Host",
+          "port": "Port",
+          "control_mode_home_assistant": "Control thermostats through Home Assistant (experimental)",
+          "update_immediately_after_write": "Update immediately after writing",
+          "ha_sensor_indoor_temperature": "Indoor temperature sensor"
         },
-        "description": "Set up your Luxtronik heatpump controller to allow monitoring and control."
+        "description": "Set up your Luxtronik heatpump controller to allow monitoring and control.",
+        "data_description": {
+          "host": "The hostname or IP address of your Luxtronik heatpump controller.",
+          "port": "The network port of the controller, usually 8888 or 8889.",
+          "control_mode_home_assistant": "When a Home Assistant thermostat is idle, the off state is sent to the heatpump, so it cannot start that circuit.",
+          "update_immediately_after_write": "Read all values from the heatpump shortly after a setting has been written, so the change shows up without waiting for the next update.",
+          "ha_sensor_indoor_temperature": "The Home Assistant sensor entity that provides the current indoor temperature for the heating thermostat."
+        }
       }
     }
   },
@@ -28,10 +34,12 @@
     "step": {
       "user": {
         "data": {
-          "control_mode_home_assistant": "Control thermostat on / off status through Home Assistant. - I.e. if the Home Assistant thermostat is in the idle status, the status off is transmitted to Luxtronik and Luxtronik cannot start this element.",
-          "use_legacy_sensor_ids": "Create legacy sensor names. (luxtronik.\u002a)",
-          "ha_sensor_indoor_temperature": "Home Assistant sensor id for the current indoor temperature",
-          "language_sensor_names": "Language key Sensor Names"
+          "control_mode_home_assistant": "Control thermostats through Home Assistant (experimental)",
+          "ha_sensor_indoor_temperature": "Indoor temperature sensor"
+        },
+        "data_description": {
+          "control_mode_home_assistant": "When a Home Assistant thermostat is idle, the off state is sent to the heatpump, so it cannot start that circuit.",
+          "ha_sensor_indoor_temperature": "The Home Assistant sensor entity that provides the current indoor temperature for the heating thermostat."
         },
         "description": "After changing the configuration the integration restarts.",
         "title": "Configuration Luxtronik"

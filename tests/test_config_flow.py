@@ -243,3 +243,16 @@ async def test_dhcp_flow_aborts_when_broadcast_finds_nothing(hass, mock_connect)
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "not_luxtronik_device"
     mock_connect.assert_not_called()
+
+
+async def test_user_flow_stores_update_immediately_after_write(hass, mock_connect, device):
+    """The submitted update immediately after write setting is stored."""
+    mock_connect.return_value = device
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**USER_INPUT, CONF_UPDATE_IMMEDIATELY_AFTER_WRITE: False})
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_UPDATE_IMMEDIATELY_AFTER_WRITE] is False

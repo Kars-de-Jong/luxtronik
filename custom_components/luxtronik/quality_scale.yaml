@@ -6,7 +6,7 @@ rules:
   common-modules:
     status: done
     comment: The integration has no coordinator or shared base entity.
-  config-flow: todo
+  config-flow: done
   config-flow-test-coverage: done
   dependency-transparency: done
   docs-actions: todo

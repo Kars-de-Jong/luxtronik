@@ -100,7 +100,9 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_PORT: user_input[CONF_PORT],
             CONF_SAFE: False,
             CONF_LOCK_TIMEOUT: 30,
-            CONF_UPDATE_IMMEDIATELY_AFTER_WRITE: True,
+            CONF_UPDATE_IMMEDIATELY_AFTER_WRITE: user_input.get(
+                CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, True
+            ),
             CONF_CONTROL_MODE_HOME_ASSISTANT: user_input[
                 CONF_CONTROL_MODE_HOME_ASSISTANT
             ],
