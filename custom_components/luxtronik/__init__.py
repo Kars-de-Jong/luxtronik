@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import Event, HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo, EntityDescription
@@ -54,7 +55,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     )
     config_entry.async_on_unload(config_entry.add_update_listener(async_reload_entry))
 
-    setup_internal(hass, config_entry.data, config_entry.options)
+    try:
+        await hass.async_add_executor_job(
+            setup_internal, hass, config_entry.data, config_entry.options
+        )
+    except OSError as err:
+        raise ConfigEntryNotReady(
+            f"Unable to connect to heatpump at {config_entry.data[CONF_HOST]}"
+        ) from err
 
     luxtronik = hass.data[DOMAIN]
 

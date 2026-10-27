@@ -26,7 +26,7 @@ rules:
     comment: Entities configured through the legacy YAML platforms keep their configured name.
   runtime-data: todo
   test-before-configure: todo
-  test-before-setup: todo
+  test-before-setup: done
   unique-config-entry: done
 
   # Silver
