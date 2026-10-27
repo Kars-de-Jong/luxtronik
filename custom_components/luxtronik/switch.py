@@ -4,14 +4,14 @@ from typing import Any
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import LuxtronikDevice
-from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, DOMAIN, LOGGER,
+from .model import LuxtronikConfigEntry
+from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, LOGGER,
                     LUX_SENSOR_EFFICIENCY_PUMP, LUX_SENSOR_HEATING_THRESHOLD,
                     LUX_SENSOR_MODE_COOLING, LUX_SENSOR_MODE_DOMESTIC_WATER,
                     LUX_SENSOR_MODE_HEATING, LUX_SENSOR_PUMP_OPTIMIZATION,
@@ -27,20 +27,17 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, DOMAIN, LOGGER,
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: LuxtronikConfigEntry,
     async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up a Luxtronik sensor from ConfigEntry."""
     LOGGER.info(
         "luxtronik2.switch.async_setup_entry ConfigType: %s", config_entry)
-    luxtronik: LuxtronikDevice = hass.data.get(DOMAIN)
-    if not luxtronik:
-        LOGGER.warning("switch.async_setup_entry no luxtronik!")
-        return False
+    luxtronik = config_entry.runtime_data.device
 
     entities = []
 
-    device_info = hass.data[f"{DOMAIN}_DeviceInfo"]
+    device_info = config_entry.runtime_data.device_info
     entities += [
         LuxtronikSwitch(
             hass=hass, luxtronik=luxtronik, device_info=device_info,
@@ -57,7 +54,7 @@ async def async_setup_entry(
             entity_registry_enabled_default=False),
     ]
 
-    deviceInfoHeating = hass.data[f"{DOMAIN}_DeviceInfo_Heating"]
+    deviceInfoHeating = config_entry.runtime_data.device_info_heating
     if deviceInfoHeating is not None:
         entities += [
             LuxtronikSwitch(
@@ -75,7 +72,7 @@ async def async_setup_entry(
                 device_class=BinarySensorDeviceClass.HEAT, entity_category=EntityCategory.CONFIG)
         ]
 
-    deviceInfoDomesticWater = hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"]
+    deviceInfoDomesticWater = config_entry.runtime_data.device_info_domestic_water
     if deviceInfoDomesticWater is not None:
         entities += [
             LuxtronikSwitch(
@@ -87,7 +84,7 @@ async def async_setup_entry(
                 device_class=BinarySensorDeviceClass.HEAT),
         ]
 
-    deviceInfoCooling = hass.data[f"{DOMAIN}_DeviceInfo_Cooling"]
+    deviceInfoCooling = config_entry.runtime_data.device_info_cooling
     if deviceInfoCooling is not None:
         entities += [
             LuxtronikSwitch(

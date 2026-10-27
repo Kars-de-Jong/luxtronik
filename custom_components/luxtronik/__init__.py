@@ -25,9 +25,11 @@ from .const import (
     SERVICE_WRITE,
     SERVICE_WRITE_SCHEMA,
 )
+from .const import CONFIG_SCHEMA  # noqa: F401
 from .helpers.helper import get_sensor_text
 from .helpers.lux_helper import get_manufacturer_firmware_url_by_model
 from .luxtronik_device import LuxtronikDevice
+from .model import LuxtronikConfigEntry, LuxtronikRuntimeData
 
 # endregion Imports
 
@@ -43,10 +45,8 @@ class LuxtronikEntityDescription(EntityDescription):
     luxtronik_key: str = ""
 
 
-async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEntry) -> bool:
     """Set up from config entry."""
-    hass.data.setdefault(DOMAIN, {})
-
     LOGGER.info(
         "%s.async_setup_entry options: '%s' data:'%s'",
         DOMAIN,
@@ -56,15 +56,15 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     config_entry.async_on_unload(config_entry.add_update_listener(async_reload_entry))
 
     try:
-        await hass.async_add_executor_job(
-            setup_internal, hass, config_entry.data, config_entry.options
+        config_entry.runtime_data = await hass.async_add_executor_job(
+            build_runtime_data, hass, config_entry.data
         )
     except OSError as err:
         raise ConfigEntryNotReady(
             f"Unable to connect to heatpump at {config_entry.data[CONF_HOST]}"
         ) from err
 
-    luxtronik = hass.data[DOMAIN]
+    luxtronik = config_entry.runtime_data.device
 
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
@@ -79,17 +79,17 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     return True
 
 
-def setup_hass_services(hass: HomeAssistant, config_entry: ConfigEntry):
+def setup_hass_services(hass: HomeAssistant, config_entry: LuxtronikConfigEntry):
     """Home Assistant services."""
 
     def write_parameter(service):
         """Write a parameter to the Luxtronik heatpump."""
         parameter = service.data.get(ATTR_PARAMETER)
         value = service.data.get(ATTR_VALUE)
-        luxtronik = hass.data[DOMAIN]
-        update_immediately_after_write = config_entry.data[
-            CONF_UPDATE_IMMEDIATELY_AFTER_WRITE
-        ]
+        luxtronik = config_entry.runtime_data.device
+        update_immediately_after_write = config_entry.data.get(
+            CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, True
+        )
         luxtronik.write(
             parameter,
             value,
@@ -104,21 +104,15 @@ def setup_hass_services(hass: HomeAssistant, config_entry: ConfigEntry):
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the luxtronik component."""
-    if DOMAIN not in config:
-        # Setup via UI. No need to continue yaml-based setup
-        return True
-    conf = config[DOMAIN]
-    return setup_internal(hass, conf, conf)
+    return True
 
 
-def setup_internal(hass, data, conf):
-    """Set up the Luxtronik component."""
+def build_runtime_data(hass: HomeAssistant, data) -> LuxtronikRuntimeData:
+    """Connect to the heatpump and build the runtime data."""
     host = data[CONF_HOST]
     port = data[CONF_PORT]
     safe = data[CONF_SAFE]
     lock_timeout = data[CONF_LOCK_TIMEOUT]
-    if CONF_UPDATE_IMMEDIATELY_AFTER_WRITE not in data:
-        data[CONF_UPDATE_IMMEDIATELY_AFTER_WRITE] = True
     # update_immediately_after_write = data[CONF_UPDATE_IMMEDIATELY_AFTER_WRITE]
     # use_legacy_sensor_ids = data[CONF_USE_LEGACY_SENSOR_IDS] if CONF_USE_LEGACY_SENSOR_IDS in data else False
     # LOGGER.info("setup_internal use_legacy_sensor_ids: '%s'",
@@ -134,14 +128,9 @@ def setup_internal(hass, data, conf):
     luxtronik = LuxtronikDevice(host, port, safe, lock_timeout)
     luxtronik.read()
 
-    hass.data[DOMAIN] = luxtronik
-    hass.data[f"{DOMAIN}_conf"] = conf
-
     # Create DeviceInfos:
-    hass.data[f"{DOMAIN}_DeviceInfo"] = build_device_info(
-        luxtronik, text_heatpump, data[CONF_HOST]
-    )
-    hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"] = DeviceInfo(
+    device_info = build_device_info(luxtronik, text_heatpump, data[CONF_HOST])
+    device_info_domestic_water = DeviceInfo(
         identifiers={(DOMAIN, f"{luxtronik.unique_id}_domestic_water")},
         configuration_url="https://www.heatpump24.com/",
         name=text_domestic_water,
@@ -153,7 +142,7 @@ def setup_internal(hass, data, conf):
         connections=None,
         via_device=None,
     )
-    hass.data[f"{DOMAIN}_DeviceInfo_Heating"] = DeviceInfo(
+    device_info_heating = DeviceInfo(
         identifiers={(DOMAIN, f"{luxtronik.unique_id}_heating")},
         configuration_url=get_manufacturer_firmware_url_by_model(luxtronik.model),
         name=text_heating,
@@ -165,7 +154,7 @@ def setup_internal(hass, data, conf):
         connections=None,
         via_device=None,
     )
-    hass.data[f"{DOMAIN}_DeviceInfo_Cooling"] = (
+    device_info_cooling = (
         DeviceInfo(
             identifiers={(DOMAIN, f"{luxtronik.unique_id}_cooling")},
             configuration_url=get_manufacturer_firmware_url_by_model(luxtronik.model),
@@ -181,39 +170,31 @@ def setup_internal(hass, data, conf):
         if luxtronik.detect_cooling_present()
         else None
     )
-    return True
+    return LuxtronikRuntimeData(
+        device=luxtronik,
+        device_info=device_info,
+        device_info_domestic_water=device_info_domestic_water,
+        device_info_heating=device_info_heating,
+        device_info_cooling=device_info_cooling,
+    )
 
 
-async def async_reload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> None:
+async def async_reload_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEntry) -> None:
     """Reload the HACS config entry."""
     LOGGER.info("async_reload_entry '%s'", config_entry)
-    await async_unload_entry(hass, config_entry)
-    await async_setup_entry(hass, config_entry)
+    await hass.config_entries.async_reload(config_entry.entry_id)
 
 
-async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEntry) -> bool:
     """Unloading the Luxtronik platforms."""
-    LOGGER.info("async_unload_entry '%s' - %s", config_entry, hass.data[DOMAIN])
-    luxtronik = hass.data[DOMAIN]
-    if luxtronik is None:
-        return True
+    LOGGER.info("async_unload_entry '%s'", config_entry)
+    hass.services.async_remove(DOMAIN, SERVICE_WRITE)
 
-    unload_ok = False
-    try:
-        await hass.async_add_executor_job(luxtronik.disconnect)
-
-        await hass.services.async_remove(DOMAIN, SERVICE_WRITE)
-
-        unload_ok = await hass.config_entries.async_unload_platforms(
-            config_entry, PLATFORMS
-        )
-        if unload_ok:
-            hass.data[DOMAIN] = None
-            hass.data.pop(DOMAIN)
-
-    except Exception as e:
-        LOGGER.critical("Remove service!", e, exc_info=True)
-
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        config_entry, PLATFORMS
+    )
+    if unload_ok:
+        await hass.async_add_executor_job(config_entry.runtime_data.device.disconnect)
     return unload_ok
 
 

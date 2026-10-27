@@ -9,8 +9,7 @@ from typing import Final
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription, SensorStateClass
-from homeassistant.const import (CONF_HOST, CONF_PORT,
-                                 PERCENTAGE,
+from homeassistant.const import (PERCENTAGE,
                                  Platform,
                                  UnitOfElectricPotential, UnitOfEnergy, UnitOfPower, UnitOfPressure, UnitOfTemperature, UnitOfTime)
 from homeassistant.helpers.entity import EntityCategory
@@ -49,22 +48,7 @@ CONF_LANGUAGE_SENSOR_NAMES: Final = "language_sensor_names"
 
 DEFAULT_PORT: Final = 8889
 
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_HOST): cv.string,
-                vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.port,
-                vol.Optional(CONF_SAFE, default=True): cv.boolean,
-                vol.Optional(CONF_LOCK_TIMEOUT, default=30): cv.positive_int,
-                vol.Optional(
-                    CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, default=False
-                ): cv.boolean,
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 SERVICE_WRITE: Final = "write"
 ATTR_PARAMETER: Final = "parameter"

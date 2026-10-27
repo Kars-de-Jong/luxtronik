@@ -17,7 +17,8 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import LuxtronikDevice, LuxtronikEntityDescription
-from .const import (DOMAIN, DOWNLOAD_PORTAL_URL, LOGGER,
+from .model import LuxtronikConfigEntry
+from .const import (DOWNLOAD_PORTAL_URL, LOGGER,
                     LUX_MODELS_AlphaInnotec, LUX_MODELS_Novelan,
                     LUX_MODELS_Other)
 
@@ -33,13 +34,13 @@ class LuxtronikUpdateEntityDescription(
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: LuxtronikConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Luxtronik update platform."""
 
     LOGGER.debug("Setting up Luxtronik update entity")
-    luxtronik_device: LuxtronikDevice = hass.data.get(DOMAIN)
+    luxtronik_device = config_entry.runtime_data.device
     luxtronik_device.read()
 
     description = LuxtronikUpdateEntityDescription(
@@ -48,7 +49,7 @@ async def async_setup_entry(
         entity_category=EntityCategory.CONFIG,
     )
     update_entity = LuxtronikUpdateEntity(
-        entry=config_entry, luxtronik_device=luxtronik_device, description=description, device_info=hass.data[f"{DOMAIN}_DeviceInfo"]
+        entry=config_entry, luxtronik_device=luxtronik_device, description=description, device_info=config_entry.runtime_data.device_info
     )
     entities = [update_entity]
 

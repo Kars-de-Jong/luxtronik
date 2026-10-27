@@ -2,8 +2,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.helpers import entity_registry as er
+from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
@@ -24,6 +26,7 @@ def luxtronik():
         unique_id=SERIAL, serial_number="2311-1234", manufacturer="Alpha Innotec",
         model="LWD", firmware_version_minor=99, has_domestic_water_circulation_pump=True)
     device.get_value.side_effect = lambda key: "Automatic" if key in MODE_SENSORS else 1
+    device.detect_cooling_target_temperature_sensor.return_value = "parameters.ID_Sollwert_KuCft1_akt"
     with patch("custom_components.luxtronik.LuxtronikDevice", return_value=device), \
             patch("custom_components.luxtronik.update.LuxtronikUpdateEntity._request_available_firmware_version"):
         yield device
@@ -81,3 +84,59 @@ async def test_migration_keeps_entity_ids(hass, luxtronik):
         assert hass.states.get(entity_id) is not None
     # No duplicates were created next to the migrated entities.
     assert hass.states.get("switch.heating_automatic_mode") is None
+
+
+async def test_runtime_data(hass, luxtronik):
+    """The device is stored in the config entry, not in hass.data."""
+    entry = await _setup(hass, version=3)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.runtime_data.device is luxtronik
+    assert entry.runtime_data.device_info_cooling is not None
+    assert DOMAIN not in hass.data
+    assert not any(key.startswith(f"{DOMAIN}_") for key in hass.data if isinstance(key, str))
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.NOT_LOADED
+
+
+async def test_reload(hass, luxtronik):
+    """The entry can be reloaded."""
+    entry = await _setup(hass, version=3)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert entry.runtime_data.device is luxtronik
+
+
+async def test_yaml_platform_uses_entry(hass, luxtronik):
+    """Sensors configured in YAML use the device of the config entry."""
+    # The sensor platform is set up with the YAML config while the entry forwards its setup.
+    hass.config_entries._hass_config = {"sensor": [{
+        "platform": DOMAIN,
+        "sensors": [{"id": "calculations.ID_WEB_Temperatur_TVL", "friendly_name": "Flow"}],
+    }]}
+    entry = await _setup(hass, version=3)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    ent_reg = er.async_get(hass)
+    entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, f"sensor.{DOMAIN}_ID_WEB_Temperatur_TVL")
+    assert hass.states.get(entity_id).name == "Flow"
+
+
+async def test_yaml_platform_without_entry(hass, luxtronik, caplog):
+    """Sensors configured in YAML are skipped when no config entry is loaded."""
+    assert await async_setup_component(hass, "sensor", {"sensor": [{
+        "platform": DOMAIN,
+        "sensors": [{"id": "calculations.ID_WEB_Temperatur_TVL"}],
+    }]})
+    await hass.async_block_till_done()
+
+    assert hass.states.async_entity_ids("sensor") == []
+    assert "no luxtronik" in caplog.text

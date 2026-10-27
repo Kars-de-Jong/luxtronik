@@ -8,7 +8,6 @@ from homeassistant.components.binary_sensor import (BinarySensorDeviceClass,
                                                     BinarySensorEntity,
                                                     PLATFORM_SCHEMA)
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID, CONF_SENSORS)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
@@ -28,6 +27,7 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
                     LUX_BINARY_SENSOR_EVU_UNLOCKED,
                     LUX_BINARY_SENSOR_SOLAR_PUMP)
 from .luxtronik_device import LuxtronikDevice
+from .model import LuxtronikConfigEntry, get_runtime_data
 
 # endregion Imports
 
@@ -68,13 +68,14 @@ async def async_setup_platform(
         config,
         discovery_info,
     )
-    luxtronik: LuxtronikDevice = hass.data.get(DOMAIN)
-    if not luxtronik:
+    runtime_data = get_runtime_data(hass)
+    if not runtime_data:
         LOGGER.warning("binary_sensor.async_setup_platform no luxtronik!")
         return False
+    luxtronik = runtime_data.device
 
     # use_legacy_sensor_ids = hass.data[f"{DOMAIN}_{CONF_USE_LEGACY_SENSOR_IDS}"]
-    deviceInfo = hass.data[f"{DOMAIN}_DeviceInfo"]
+    deviceInfo = runtime_data.device_info
 
     sensors = config.get(CONF_SENSORS)
     entities = []
@@ -131,19 +132,16 @@ async def async_setup_platform(
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: LuxtronikConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up a Luxtronik sensor from ConfigEntry."""
     LOGGER.info(
         f"{DOMAIN}.binary_sensor.async_setup_entry ConfigType: %s", config_entry
     )
-    luxtronik: LuxtronikDevice = hass.data.get(DOMAIN)
-    if not luxtronik:
-        LOGGER.warning("binary_sensor.async_setup_entry no luxtronik!")
-        return False
+    luxtronik = config_entry.runtime_data.device
 
-    deviceInfo = hass.data[f"{DOMAIN}_DeviceInfo"]
+    deviceInfo = config_entry.runtime_data.device_info
 
     entities = [
         LuxtronikBinarySensor(
@@ -216,7 +214,7 @@ async def async_setup_entry(
         # calculations.ID_WEB_MZ2out Mischer 2 zu
     ]
 
-    deviceInfoHeating = hass.data[f"{DOMAIN}_DeviceInfo_Heating"]
+    deviceInfoHeating = config_entry.runtime_data.device_info_heating
     if deviceInfoHeating is not None:
         entities += [
             LuxtronikBinarySensor(
@@ -237,7 +235,7 @@ async def async_setup_entry(
             ),
         ]
 
-    deviceInfoDomesticWater = hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"]
+    deviceInfoDomesticWater = config_entry.runtime_data.device_info_domestic_water
     if deviceInfoDomesticWater is not None:
         if luxtronik.has_domestic_water_circulation_pump:
             circulation_pump_unique_id = 'domestic_water_circulation_pump'
@@ -274,7 +272,7 @@ async def async_setup_entry(
                 ),
             ]
 
-    deviceInfoCooling = hass.data[f"{DOMAIN}_DeviceInfo_Cooling"]
+    deviceInfoCooling = config_entry.runtime_data.device_info_cooling
     if deviceInfoCooling is not None:
         entities += [
             LuxtronikBinarySensor(

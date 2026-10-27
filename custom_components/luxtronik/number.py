@@ -5,7 +5,6 @@ from typing import Any, cast
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -15,9 +14,10 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType
 
 from . import LuxtronikDevice
+from .model import LuxtronikConfigEntry
 from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION,
                     ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
-                    DOMAIN, LOGGER,
+                    DOMAIN,
                     LUX_SENSOR_COOLING_START_DELAY,
                     LUX_SENSOR_COOLING_STOP_DELAY,
                     LUX_SENSOR_COOLING_THRESHOLD,
@@ -50,17 +50,14 @@ async def async_setup_platform(
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry,
+    hass: HomeAssistant, config_entry: LuxtronikConfigEntry,
     async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up a Luxtronik number from ConfigEntry."""
-    luxtronik: LuxtronikDevice = hass.data.get(DOMAIN)
-    if not luxtronik:
-        LOGGER.warning("number.async_setup_entry no luxtronik!")
-        return False
+    luxtronik = config_entry.runtime_data.device
 
 
-    deviceInfo = hass.data[f"{DOMAIN}_DeviceInfo"]
+    deviceInfo = config_entry.runtime_data.device_info
     entities = [
     ]
     if luxtronik.has_second_heat_generator or True:
@@ -79,7 +76,7 @@ async def async_setup_entry(
                 entity_category=EntityCategory.CONFIG),
         ]
 
-    deviceInfoHeating = hass.data[f"{DOMAIN}_DeviceInfo_Heating"]
+    deviceInfoHeating = config_entry.runtime_data.device_info_heating
     if deviceInfoHeating is not None:
         entities += [
             LuxtronikNumber(
@@ -163,7 +160,7 @@ async def async_setup_entry(
                     unique_id='heating_room_temperature_impact_factor', icon='mdi:thermometer-chevron-up', unit_of_measurement=PERCENTAGE, min_value=0, max_value=200, step=10, mode=NumberMode.BOX, entity_category=EntityCategory.CONFIG),
             ]
 
-    deviceInfoDomesticWater = hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"]
+    deviceInfoDomesticWater = config_entry.runtime_data.device_info_domestic_water
     if deviceInfoDomesticWater is not None:
         entities += [
             LuxtronikNumber(
@@ -215,7 +212,7 @@ async def async_setup_entry(
                     mode=NumberMode.BOX, entity_category=EntityCategory.CONFIG),
             ]
 
-    deviceInfoCooling = hass.data[f"{DOMAIN}_DeviceInfo_Cooling"]
+    deviceInfoCooling = config_entry.runtime_data.device_info_cooling
     if deviceInfoCooling is not None:
 
         entities += [

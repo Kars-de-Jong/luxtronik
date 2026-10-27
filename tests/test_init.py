@@ -27,3 +27,12 @@ async def test_setup_entry_not_ready(hass):
         await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.SETUP_RETRY
+
+
+async def test_async_setup_ignores_yaml_connection(hass):
+    """The heatpump connection can only be configured from the UI."""
+    with patch("custom_components.luxtronik.LuxtronikDevice") as device:
+        assert await async_setup_component(
+            hass, DOMAIN, {DOMAIN: {CONF_HOST: "10.0.0.2", CONF_PORT: 8889}}) is True
+    device.assert_not_called()
+    assert DOMAIN not in hass.data

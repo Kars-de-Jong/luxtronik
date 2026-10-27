@@ -6,7 +6,6 @@ from typing import Any, Final
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import HVACAction, HVACMode, PRESET_AWAY, PRESET_BOOST, PRESET_NONE
 from homeassistant.components.water_heater import ATTR_TEMPERATURE
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
@@ -15,6 +14,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType
 
 from . import LuxtronikDevice
+from .model import LuxtronikConfigEntry
 from .const import (CONF_CALCULATIONS, CONF_CONTROL_MODE_HOME_ASSISTANT,
                     CONF_HA_SENSOR_INDOOR_TEMPERATURE,
                     CONF_PARAMETERS,
@@ -56,7 +56,7 @@ async def async_setup_platform(
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, config_entry: LuxtronikConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up a Luxtronik thermostat from ConfigEntry."""
     LOGGER.info("climate.async_setup_entry entry: '%s'", config_entry)
@@ -65,14 +65,11 @@ async def async_setup_entry(
     ha_sensor_indoor_temperature = config_entry.options.get(
         CONF_HA_SENSOR_INDOOR_TEMPERATURE)
 
-    luxtronik: LuxtronikDevice = hass.data.get(DOMAIN)
-    if not luxtronik:
-        LOGGER.warning("climate.async_setup_platform no luxtronik!")
-        return False
+    luxtronik = config_entry.runtime_data.device
 
     entities = []
 
-    deviceInfoHeating = hass.data[f"{DOMAIN}_DeviceInfo_Heating"]
+    deviceInfoHeating = config_entry.runtime_data.device_info_heating
     if deviceInfoHeating is not None:
         entities += [
             LuxtronikHeatingThermostat(
@@ -80,7 +77,7 @@ async def async_setup_entry(
                 current_temperature_sensor=ha_sensor_indoor_temperature)
         ]
 
-    deviceInfoDomesticWater = hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"]
+    deviceInfoDomesticWater = config_entry.runtime_data.device_info_domestic_water
     if deviceInfoDomesticWater is not None:
         entities += [
             LuxtronikDomesticWaterThermostat(
@@ -88,7 +85,7 @@ async def async_setup_entry(
                 current_temperature_sensor=LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE)
         ]
 
-    deviceInfoCooling = hass.data[f"{DOMAIN}_DeviceInfo_Cooling"]
+    deviceInfoCooling = config_entry.runtime_data.device_info_cooling
     if deviceInfoCooling is not None:
         entities += [
             LuxtronikCoolingThermostat(

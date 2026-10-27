@@ -5,7 +5,6 @@ from datetime import datetime, time, timezone
 from homeassistant.components.sensor import (ENTITY_ID_FORMAT,
                                              SensorDeviceClass, SensorEntity,
                                              SensorStateClass)
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
                                  CONF_SENSORS,
                                  EVENT_HOMEASSISTANT_STOP,
@@ -36,6 +35,7 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, ATTR_STATUS_TEXT,
                     UNITS, LuxMode)
 from .helpers.helper import get_sensor_text, get_sensor_value_text
 from .luxtronik_device import LuxtronikDevice
+from .model import LuxtronikConfigEntry, get_runtime_data
 
 # endregion Imports
 
@@ -57,15 +57,16 @@ async def async_setup_platform(
         config,
         discovery_info,
     )
-    luxtronik: LuxtronikDevice = hass.data.get(DOMAIN)
-    if not luxtronik:
+    runtime_data = get_runtime_data(hass)
+    if not runtime_data:
         LOGGER.warning("%s.sensor.async_setup_platform no luxtronik!", DOMAIN)
         return False
+    luxtronik = runtime_data.device
 
     # use_legacy_sensor_ids = hass.data[f"{DOMAIN}_{CONF_USE_LEGACY_SENSOR_IDS}"]
     # LOGGER.info("sensor.async_setup_platform use_legacy_sensor_ids: '%s'",
     #             use_legacy_sensor_ids)
-    device_info = hass.data[f"{DOMAIN}_DeviceInfo"]
+    device_info = runtime_data.device_info
 
     sensors = config.get(CONF_SENSORS)
     entities = []
@@ -122,18 +123,15 @@ async def async_setup_platform(
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: LuxtronikConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up a Luxtronik sensor from ConfigEntry."""
     LOGGER.info(f"{DOMAIN}.sensor.async_setup_entry ConfigType: %s", config_entry)
-    luxtronik: LuxtronikDevice = hass.data.get(DOMAIN)
-    if not luxtronik:
-        LOGGER.warning("%s.sensor.async_setup_entry no luxtronik!", DOMAIN)
-        return False
+    luxtronik = config_entry.runtime_data.device
     luxtronik.read()
 
-    device_info = hass.data[f"{DOMAIN}_DeviceInfo"]
+    device_info = config_entry.runtime_data.device_info
 
     # entities: list[LuxtronikSensor] = [
     #     LuxtronikStatusSensor(hass, luxtronik, device_info, description)
@@ -503,7 +501,7 @@ async def async_setup_entry(
             ),
         ]
 
-    device_info_heating = hass.data[f"{DOMAIN}_DeviceInfo_Heating"]
+    device_info_heating = config_entry.runtime_data.device_info_heating
     if device_info_heating is not None:
         has_room_temp = luxtronik.get_value("parameters.ID_Einst_RFVEinb_akt") != 0
         if has_room_temp:
@@ -597,7 +595,7 @@ async def async_setup_entry(
         entity_category=None)
     )
 
-    device_info_domestic_water = hass.data[f"{DOMAIN}_DeviceInfo_Domestic_Water"]
+    device_info_domestic_water = config_entry.runtime_data.device_info_domestic_water
     if device_info_domestic_water is not None:
 
         entities += [
@@ -687,7 +685,7 @@ async def async_setup_entry(
                 ),
             ]
 
-    deviceInfoCooling = hass.data[f"{DOMAIN}_DeviceInfo_Cooling"]
+    deviceInfoCooling = config_entry.runtime_data.device_info_cooling
     if deviceInfoCooling is not None:
         entities += [
             LuxtronikSensor(
