@@ -30,10 +30,8 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a Luxtronik heatpump controller config flow."""
 
     VERSION = 3
-    _hassio_discovery = None
     _discovery_host = None
     _discovery_port = None
-    _discovery_schema = None
 
     _sensor_prefix = DOMAIN
 
@@ -57,7 +55,10 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             discovery_info.ip,
         )
         # Validate dhcp result with socket broadcast:
-        broadcast_discover_ip, broadcast_discover_port = await self.hass.async_add_executor_job(discover)
+        broadcast_result = await self.hass.async_add_executor_job(discover)
+        if broadcast_result is None:
+            return self.async_abort(reason="not_luxtronik_device")
+        broadcast_discover_ip, broadcast_discover_port = broadcast_result
         if broadcast_discover_ip != discovery_info.ip:
             return self.async_abort(reason="not_luxtronik_device")
 
@@ -73,7 +74,6 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._discovery_port = (
             DEFAULT_PORT if broadcast_discover_port is None else broadcast_discover_port
         )
-        self._discovery_schema = self._get_schema()
         return await self.async_step_user()
 
     async def _show_setup_form(
