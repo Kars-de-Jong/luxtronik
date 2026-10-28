@@ -1,18 +1,14 @@
 """Main help module."""
 import json
 import os.path
+from functools import cache
 
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 
 from ..const import DOMAIN, LANG_DEFAULT, LANGUAGES_SENSOR_NAMES, LOGGER
 
-__content_locale__ = None
-__content_default__ = None
 
-__content_sensor_locale__ = None
-__content_sensor_default__ = None
-
-
+@cache
 def _load_lang_from_file(fname: str, log_warning=True):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     fname = os.path.join(dir_path, fname)
@@ -20,10 +16,8 @@ def _load_lang_from_file(fname: str, log_warning=True):
         if log_warning:
             LOGGER.warning("_load_lang_from_file - file not found %s", fname)
         return {}
-    f = open(fname)
-    data = json.loads(f.read())
-    f.close
-    return data
+    with open(fname, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def _normalize_lang(lang: str) -> str:
@@ -37,22 +31,35 @@ def _normalize_lang(lang: str) -> str:
     return lang
 
 
+def _load_texts(lang: str) -> dict:
+    return _load_lang_from_file(f"../translations/texts.{lang}.json")
+
+
+def _load_value_texts(lang: str, platform: str) -> dict:
+    return _load_lang_from_file(
+        f"../translations/{platform}.{lang}.json", log_warning=lang == LANG_DEFAULT
+    )
+
+
+def load_texts(lang: str) -> None:
+    """Load all text files, so the getters don't do file I/O inside the event loop."""
+    lang = _normalize_lang(lang)
+    for file_lang in {LANG_DEFAULT, lang}:
+        _load_texts(file_lang)
+        _load_value_texts(file_lang, "sensor")
+
+
 def get_sensor_text(lang: str, key: str) -> str:
     """Get a sensor text."""
-    global __content_locale__
-    global __content_default__
     lang = _normalize_lang(lang)
-    if __content_locale__ is None and lang is not None and lang != LANG_DEFAULT:
-        __content_locale__ = _load_lang_from_file(f"../translations/texts.{lang}.json")
-    if __content_default__ is None:
-        __content_default__ = _load_lang_from_file(
-            f"../translations/texts.{LANG_DEFAULT}.json"
-        )
-    if lang != LANG_DEFAULT and __content_locale__ is not None and key in __content_locale__:
-        return __content_locale__[key]
-    if key in __content_default__:
-        return __content_default__[key]
-    LOGGER.warning("get_sensor_text key %s not found in %s", key, __content_default__)
+    if lang != LANG_DEFAULT:
+        content_locale = _load_texts(lang)
+        if key in content_locale:
+            return content_locale[key]
+    content_default = _load_texts(LANG_DEFAULT)
+    if key in content_default:
+        return content_default[key]
+    LOGGER.warning("get_sensor_text key %s not found in %s", key, content_default)
     return key.replace("_", " ").title()
 
 
@@ -60,22 +67,7 @@ def get_sensor_value_text(
     lang: str, key: str, value: str, platform="sensor"
 ) -> str:
     """Get a sensor value text."""
-    global __content_sensor_locale__
-    global __content_sensor_default__
-    if __content_sensor_default__ is None:
-        __content_sensor_default__ = _load_lang_from_file(
-            f"../translations/{platform}.{LANG_DEFAULT}.json", log_warning=True
-        )
-    lang = _normalize_lang(lang)
-    if __content_sensor_locale__ is None and lang != LANG_DEFAULT:
-        __content_sensor_locale__ = _load_lang_from_file(
-            f"../translations/{platform}.{lang}.json", log_warning=False
-        )
-    content = (
-        __content_sensor_default__
-        if lang == LANG_DEFAULT
-        else __content_sensor_locale__
-    )
+    content = _load_value_texts(_normalize_lang(lang), platform)
     if (
         "state" in content
         and key in content["state"]

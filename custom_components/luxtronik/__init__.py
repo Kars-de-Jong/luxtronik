@@ -36,7 +36,7 @@ from .const import (
     YAML_SENSOR_SCHEMA,
 )
 from .const import CONFIG_SCHEMA  # noqa: F401
-from .helpers.helper import get_sensor_text, get_yaml_unique_id
+from .helpers.helper import get_sensor_text, get_yaml_unique_id, load_texts
 from .luxtronik_device import LuxtronikDevice
 from .model import LuxtronikConfigEntry, LuxtronikRuntimeData
 
@@ -78,6 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEn
             f"Unable to connect to heatpump at {config_entry.data[CONF_HOST]}"
         ) from err
 
+    await hass.async_add_executor_job(load_texts, hass.config.language)
     config_entry.runtime_data = build_runtime_data(
         hass, config_entry, luxtronik, cooling_present
     )

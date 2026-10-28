@@ -1,4 +1,5 @@
 """Test component setup."""
+import threading
 from unittest.mock import patch
 
 import pytest
@@ -12,6 +13,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,
                                               SERVICE_WRITE)
+from custom_components.luxtronik.helpers import helper
 
 async def test_async_setup(hass):
     """Test the component gets setup."""
@@ -132,3 +134,21 @@ async def test_existing_sub_device_is_converted_to_child(hass, luxtronik):
         (DOMAIN, "2311_1234_abcd_heating"), entry.entry_id)
     assert child.id == old.id
     assert dev_reg.async_get_device_by_identifier((DOMAIN, "2311_1234_abcd_heating"), entry.entry_id) is None
+
+
+@pytest.mark.parametrize("language", ["en", "de"])
+async def test_texts_are_not_loaded_in_event_loop(hass, luxtronik, language):
+    """The text files are read in the executor, not inside the event loop."""
+    hass.config.language = language
+    loaded_in_loop = []
+
+    def _open(*args, **kwargs):
+        loaded_in_loop.append(hass.loop_thread_id == threading.get_ident())
+        return open(*args, **kwargs)
+
+    helper._load_lang_from_file.cache_clear()
+    with patch.object(helper, "open", _open, create=True):
+        await _setup_entry(hass)
+
+    assert loaded_in_loop
+    assert not any(loaded_in_loop)
