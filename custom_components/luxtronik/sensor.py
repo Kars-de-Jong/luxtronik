@@ -69,7 +69,6 @@ async def async_setup_platform(
     # use_legacy_sensor_ids = hass.data[f"{DOMAIN}_{CONF_USE_LEGACY_SENSOR_IDS}"]
     # LOGGER.info("sensor.async_setup_platform use_legacy_sensor_ids: '%s'",
     #             use_legacy_sensor_ids)
-    device_info = runtime_data.device_info
 
     sensors = config.get(CONF_SENSORS)
     entities = []
@@ -96,7 +95,8 @@ async def async_setup_platform(
                 )
                 entity = LuxtronikSensor(
                     luxtronik=luxtronik,
-                    device_info=device_info,
+                    # YAML platforms have no config entry, so their entities can't belong to a device.
+                    device_info=None,
                     sensor_key=f"{group}.{sensor_id}",
                     unique_id=sensor_id,
                     icon=icon,
@@ -733,7 +733,7 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
     def __init__(
         self,
         luxtronik: LuxtronikDevice,
-        device_info: DeviceInfo | ChildDeviceInfo,
+        device_info: DeviceInfo | ChildDeviceInfo | None,
         sensor_key: str,
         unique_id: str,
         icon: str = "mdi:thermometer",

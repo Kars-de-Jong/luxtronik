@@ -93,8 +93,8 @@ async def test_reload(hass, luxtronik):
     assert entry.runtime_data.device is luxtronik
 
 
-async def test_yaml_platform_uses_entry(hass, luxtronik):
-    """Sensors configured in YAML use the device of the config entry."""
+async def test_yaml_platform_uses_entry(hass, luxtronik, caplog):
+    """Sensors configured in YAML use the heatpump of the config entry, without a device."""
     # The sensor platform is set up with the YAML config while the entry forwards its setup.
     hass.config_entries._hass_config = {"sensor": [{
         "platform": DOMAIN,
@@ -107,6 +107,8 @@ async def test_yaml_platform_uses_entry(hass, luxtronik):
     ent_reg = er.async_get(hass)
     entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, f"sensor.{DOMAIN}_ID_WEB_Temperatur_TVL")
     assert hass.states.get(entity_id).name == "Flow"
+    assert ent_reg.async_get(entity_id).device_id is None
+    assert "attach a device to an entity without a config entry" not in caplog.text
 
 
 async def test_yaml_platform_without_entry(hass, luxtronik, caplog):
