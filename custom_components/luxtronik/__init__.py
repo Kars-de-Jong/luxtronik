@@ -145,7 +145,6 @@ def build_runtime_data(hass: HomeAssistant, data) -> LuxtronikRuntimeData:
         hw_version=None,
         sw_version=None,
         connections=None,
-        via_device=None,
     )
     device_info_heating = DeviceInfo(
         identifiers={(DOMAIN, f"{luxtronik.unique_id}_heating")},
@@ -157,7 +156,6 @@ def build_runtime_data(hass: HomeAssistant, data) -> LuxtronikRuntimeData:
         hw_version=None,
         sw_version=None,
         connections=None,
-        via_device=None,
     )
     device_info_cooling = (
         DeviceInfo(
@@ -170,7 +168,6 @@ def build_runtime_data(hass: HomeAssistant, data) -> LuxtronikRuntimeData:
             hw_version=None,
             sw_version=None,
             connections=None,
-            via_device=None,
         )
         if luxtronik.detect_cooling_present()
         else None
@@ -225,7 +222,6 @@ def build_device_info(
 
         sw_version=luxtronik.get_value("calculations.ID_WEB_SoftStand"),
 
-        via_device=None,
     )
     LOGGER.debug("build_device_info '%s'", device_info)
     LOGGER.debug("set_device_info '%s'", set(device_info))
