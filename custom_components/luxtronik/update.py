@@ -18,9 +18,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import LuxtronikDevice, LuxtronikEntityDescription
 from .model import LuxtronikConfigEntry
-from .const import (DOWNLOAD_PORTAL_URL, LOGGER,
-                    LUX_MODELS_AlphaInnotec, LUX_MODELS_Novelan,
-                    LUX_MODELS_Other)
+from .const import DOWNLOAD_PORTAL_URL, LOGGER
+from .helpers.lux_helper import get_manufacturer_firmware_url_by_model
 
 # The download portal is queried on every poll; firmware releases are rare.
 SCAN_INTERVAL: Final = timedelta(hours=1)
@@ -101,10 +100,13 @@ class LuxtronikUpdateEntity(UpdateEntity):
             return None
         return self.__firmware_version_available[:len(self.installed_version)]
 
+    @property
+    def release_url(self) -> str:
+        """Return the manufacturer firmware download page."""
+        return get_manufacturer_firmware_url_by_model(self.luxtronik_device.model)
+
     def release_notes(self) -> str | None:
-        release_url = self._get_manufacturer_firmware_url_by_model(
-            self.luxtronik_device.get_value("calculations.ID_WEB_Code_WP_akt")
-        )
+        release_url = self.release_url
         download_id = self._get_firmware_download_id(self.installed_version)
         download_url = f"{DOWNLOAD_PORTAL_URL}{download_id}"
         return f'<a href="{release_url}" target="_blank" rel="noreferrer noopener">Firmware Download Portal</a>&emsp;<a href="{download_url}" target="_blank" rel="noreferrer noopener">Direct Download</a><br><br>alpha innotec doesn\'t provide a changelog.<br>Please contact support for more information.'
@@ -156,17 +158,3 @@ class LuxtronikUpdateEntity(UpdateEntity):
         threading.Thread(
             target=do_request_available_firmware_version, args=(self, download_id)
         ).start()
-
-    def _get_manufacturer_firmware_url_by_model(self, model: str) -> str:
-        """Return the manufacturer firmware download url."""
-        layout_id = 0
-
-        if model is None:
-            layout_id = 0
-        elif model.startswith(tuple(LUX_MODELS_AlphaInnotec)):
-            layout_id = 1
-        elif model.startswith(tuple(LUX_MODELS_Novelan)):
-            layout_id = 2
-        elif model.startswith(tuple(LUX_MODELS_Other)):
-            layout_id = 3
-        return f"https://www.heatpump24.com/DownloadArea.php?layout={layout_id}"
