@@ -2,7 +2,6 @@
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.helpers import entity_registry as er
-from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
@@ -91,33 +90,3 @@ async def test_reload(hass, luxtronik):
     await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.LOADED
     assert entry.runtime_data.device is luxtronik
-
-
-async def test_yaml_platform_uses_entry(hass, luxtronik, caplog):
-    """Sensors configured in YAML use the heatpump of the config entry, without a device."""
-    # The sensor platform is set up with the YAML config while the entry forwards its setup.
-    hass.config_entries._hass_config = {"sensor": [{
-        "platform": DOMAIN,
-        "sensors": [{"id": "calculations.ID_WEB_Temperatur_TVL", "friendly_name": "Flow"}],
-    }]}
-    entry = await _setup(hass, version=3)
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-
-    ent_reg = er.async_get(hass)
-    entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, f"sensor.{DOMAIN}_ID_WEB_Temperatur_TVL")
-    assert hass.states.get(entity_id).name == "Flow"
-    assert ent_reg.async_get(entity_id).device_id is None
-    assert "attach a device to an entity without a config entry" not in caplog.text
-
-
-async def test_yaml_platform_without_entry(hass, luxtronik, caplog):
-    """Sensors configured in YAML are skipped when no config entry is loaded."""
-    assert await async_setup_component(hass, "sensor", {"sensor": [{
-        "platform": DOMAIN,
-        "sensors": [{"id": "calculations.ID_WEB_Temperatur_TVL"}],
-    }]})
-    await hass.async_block_till_done()
-
-    assert hass.states.async_entity_ids("sensor") == []
-    assert "no luxtronik" in caplog.text

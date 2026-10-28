@@ -9,7 +9,8 @@ from typing import Final
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription, SensorStateClass
-from homeassistant.const import (PERCENTAGE,
+from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
+                                 PERCENTAGE,
                                  Platform,
                                  UnitOfElectricPotential, UnitOfEnergy, UnitOfPower, UnitOfPressure, UnitOfTemperature, UnitOfTime)
 from homeassistant.helpers.entity import EntityCategory
@@ -494,6 +495,23 @@ COOLING_SENSOR_TYPES: tuple[LuxtronikSensorEntityDescription, ...] = (
 # region Legacy consts
 CONF_GROUP: Final = "group"
 CONF_INVERT_STATE: Final = "invert"
+
+# A sensor of the YAML sensor platform.
+YAML_SENSOR_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_GROUP): vol.All(
+            cv.string,
+            vol.In([CONF_PARAMETERS, CONF_CALCULATIONS, CONF_VISIBILITIES]),
+        ),
+        vol.Required(CONF_ID): cv.string,
+        vol.Optional(CONF_FRIENDLY_NAME): cv.string,
+        vol.Optional(CONF_ICON): cv.string,
+    }
+)
+# A sensor of the YAML binary_sensor platform.
+YAML_BINARY_SENSOR_SCHEMA = YAML_SENSOR_SCHEMA.extend(
+    {vol.Optional(CONF_INVERT_STATE, default=False): cv.boolean}
+)
 
 CONF_CELSIUS: Final = "celsius"
 CONF_SECONDS: Final = "seconds"

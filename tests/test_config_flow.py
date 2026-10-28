@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant import config_entries
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SENSORS
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -232,6 +232,19 @@ async def test_options_flow_updates_options(hass):
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.options == user_input
+
+
+async def test_options_flow_keeps_yaml_sensors(hass):
+    """The options form keeps the sensors synced from YAML."""
+    sensors = [{"id": "calculations.ID_WEB_Temperatur_TVL"}]
+    entry = MockConfigEntry(domain=DOMAIN, version=3, data={}, options={CONF_SENSORS: sensors})
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    user_input = {CONF_CONTROL_MODE_HOME_ASSISTANT: False, CONF_HA_SENSOR_INDOOR_TEMPERATURE: "sensor.living_room"}
+    result = await hass.config_entries.options.async_configure(result["flow_id"], user_input)
+
+    assert entry.options == {**user_input, CONF_SENSORS: sensors}
 
 
 async def test_dhcp_flow_aborts_when_broadcast_finds_nothing(hass, mock_connect):

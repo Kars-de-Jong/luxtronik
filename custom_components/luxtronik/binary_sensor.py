@@ -7,28 +7,28 @@ import voluptuous as vol
 from homeassistant.components.binary_sensor import (BinarySensorDeviceClass,
                                                     BinarySensorEntity,
                                                     PLATFORM_SCHEMA)
-from homeassistant.components.sensor import ENTITY_ID_FORMAT
-from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID, CONF_SENSORS)
+from homeassistant.const import (CONF_BINARY_SENSORS, CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
+                                 CONF_SENSORS)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.util import slugify
 
 from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
-                    CONF_CALCULATIONS, CONF_GROUP, CONF_INVERT_STATE,
-                    CONF_PARAMETERS, CONF_VISIBILITIES,
+                    CONF_INVERT_STATE,
                     DEFAULT_DEVICE_CLASS, DEVICE_CLASSES,
                     DOMAIN, LOGGER,
                     LUX_BINARY_SENSOR_ADDITIONAL_CIRCULATION_PUMP,
                     LUX_BINARY_SENSOR_CIRCULATION_PUMP_HEATING,
                     LUX_BINARY_SENSOR_DOMESTIC_WATER_RECIRCULATION_PUMP,
                     LUX_BINARY_SENSOR_EVU_UNLOCKED,
-                    LUX_BINARY_SENSOR_SOLAR_PUMP, SCAN_INTERVAL_DEVICE)
+                    LUX_BINARY_SENSOR_SOLAR_PUMP, SCAN_INTERVAL_DEVICE,
+                    YAML_BINARY_SENSOR_SCHEMA)
+from .helpers.helper import get_yaml_unique_id
 from .luxtronik_device import LuxtronikDevice
-from .model import LuxtronikConfigEntry, get_runtime_data
+from .model import LuxtronikConfigEntry
 
 # endregion Imports
 
@@ -37,21 +37,7 @@ from .model import LuxtronikConfigEntry, get_runtime_data
 SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Required(CONF_SENSORS): vol.All(
-            cv.ensure_list,
-            [
-                {
-                    vol.Optional(CONF_GROUP): vol.All(
-                        cv.string,
-                        vol.In([CONF_PARAMETERS, CONF_CALCULATIONS, CONF_VISIBILITIES]),
-                    ),
-                    vol.Required(CONF_ID): cv.string,
-                    vol.Optional(CONF_FRIENDLY_NAME): cv.string,
-                    vol.Optional(CONF_ICON): cv.string,
-                    vol.Optional(CONF_INVERT_STATE, default=False): cv.boolean,
-                }
-            ],
-        )
+        vol.Required(CONF_SENSORS): vol.All(cv.ensure_list, [YAML_BINARY_SENSOR_SCHEMA])
     }
 )
 # endregion Constants
@@ -65,72 +51,45 @@ async def async_setup_platform(
     async_add_entities: AddEntitiesCallback,
     discovery_info: dict[str, Any] = None,
 ) -> None:
-    """Set up a Luxtronik binary sensor from yaml config."""
-    LOGGER.info(
-        f"{DOMAIN}.binary_sensor.async_setup_platform ConfigType: %s - discovery_info: %s",
-        config,
-        discovery_info,
-    )
-    runtime_data = get_runtime_data(hass)
-    if not runtime_data:
+    """Accept the YAML config; the config entry creates its binary sensors.
+
+    Entities without a config entry can't belong to a device, so the integration
+    syncs the YAML sensors into the config entry when it is set up.
+    """
+    if not hass.config_entries.async_entries(DOMAIN):
         LOGGER.warning("binary_sensor.async_setup_platform no luxtronik!")
-        return False
-    luxtronik = runtime_data.device
 
-    # use_legacy_sensor_ids = hass.data[f"{DOMAIN}_{CONF_USE_LEGACY_SENSOR_IDS}"]
 
-    sensors = config.get(CONF_SENSORS)
+def _yaml_entities(
+    luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo, sensors: list[dict[str, Any]]
+) -> list["LuxtronikBinarySensor"]:
+    """Create the binary sensors configured in YAML."""
     entities = []
-    if sensors:
-        # region Legacy part:
-        for sensor_cfg in sensors:
-            sensor_id = sensor_cfg[CONF_ID]
-            if "." in sensor_id:
-                group = sensor_id.split(".")[0]
-                sensor_id = sensor_id.split(".")[1]
-            else:
-                group = sensor_cfg[CONF_GROUP]
-            sensor = luxtronik.get_sensor(group, sensor_id)
-            if sensor:
-                name = (
-                    sensor.name
-                    if not sensor_cfg.get(CONF_FRIENDLY_NAME)
-                    else sensor_cfg.get(CONF_FRIENDLY_NAME)
-                )
-                # if use_legacy_sensor_ids else None
-                entity_id = "luxtronik.{}".format(slugify(name))
-                LOGGER.info(
-                    "binary_sensor.async_setup_platform create entity_id: '%s'",
-                    entity_id,
-                )
-                entity = LuxtronikBinarySensor(
-                    luxtronik,
-                    # YAML platforms have no config entry, so their entities can't belong to a device.
-                    deviceInfo=None,
-                    sensor_key=f"{group}.{sensor_id}",
-                    unique_id=sensor_id,
-                    icon=sensor_cfg.get(CONF_ICON),
-                    device_class=DEVICE_CLASSES.get(
-                        sensor.measurement_type, DEFAULT_DEVICE_CLASS
-                    ),
-                    state_class=None,
-                    invert_state=sensor_cfg.get(CONF_INVERT_STATE),
-                )
-                # Keep the unique_id and name of sensors configured in YAML.
-                entity._attr_has_entity_name = False
-                entity._attr_translation_key = None
-                entity._attr_name = name
-                entity._attr_unique_id = ENTITY_ID_FORMAT.format(f"{DOMAIN}_{sensor_id}")
-                entities += [entity]
-            else:
-                LOGGER.warning(
-                    "Invalid Luxtronik ID %s in group %s",
-                    sensor_id,
-                    group,
-                )
-        # endregion Legacy part:
-
-    async_add_entities(entities)
+    for sensor_cfg in sensors:
+        group, sensor_id = sensor_cfg[CONF_ID].split(".", 1)
+        sensor = luxtronik.get_sensor(group, sensor_id)
+        if not sensor:
+            LOGGER.warning("Invalid Luxtronik ID %s in group %s", sensor_id, group)
+            continue
+        entity = LuxtronikBinarySensor(
+            luxtronik,
+            deviceInfo=deviceInfo,
+            sensor_key=sensor_cfg[CONF_ID],
+            unique_id=sensor_id,
+            icon=sensor_cfg.get(CONF_ICON),
+            device_class=DEVICE_CLASSES.get(
+                sensor.measurement_type, DEFAULT_DEVICE_CLASS
+            ),
+            state_class=None,
+            invert_state=sensor_cfg.get(CONF_INVERT_STATE, False),
+        )
+        # Keep the unique_id and name of sensors configured in YAML.
+        entity._attr_has_entity_name = False
+        entity._attr_translation_key = None
+        entity._attr_name = sensor_cfg.get(CONF_FRIENDLY_NAME) or sensor.name
+        entity._attr_unique_id = get_yaml_unique_id(sensor_cfg[CONF_ID])
+        entities += [entity]
+    return entities
 
 
 async def async_setup_entry(
@@ -288,6 +247,10 @@ async def async_setup_entry(
             )
         ]
 
+    entities += _yaml_entities(
+        luxtronik, deviceInfo, config_entry.options.get(CONF_BINARY_SENSORS, [])
+    )
+
     async_add_entities(entities)
 # endregion Setup
 
@@ -301,7 +264,7 @@ class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
     def __init__(
         self,
         luxtronik: LuxtronikDevice,
-        deviceInfo: DeviceInfo | ChildDeviceInfo | None,
+        deviceInfo: DeviceInfo | ChildDeviceInfo,
         sensor_key: str,
         unique_id: str,
         icon: str,

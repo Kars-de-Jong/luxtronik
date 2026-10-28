@@ -2,8 +2,7 @@
 # region Imports
 from datetime import datetime, time, timezone
 
-from homeassistant.components.sensor import (ENTITY_ID_FORMAT,
-                                             SensorDeviceClass, SensorEntity,
+from homeassistant.components.sensor import (SensorDeviceClass, SensorEntity,
                                              SensorStateClass)
 from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
                                  CONF_SENSORS,
@@ -20,7 +19,6 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.util import dt as dt_util
 
 from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, ATTR_STATUS_TEXT,
-                    CONF_GROUP,
                     DEFAULT_DEVICE_CLASS, DEVICE_CLASSES, DOMAIN, ICONS,
                     LOGGER, LUX_BINARY_SENSOR_ADDITIONAL_CIRCULATION_PUMP,
                     LUX_SENSOR_MODE_COOLING,
@@ -34,9 +32,9 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, ATTR_STATUS_TEXT,
                     LUX_STATUS_THERMAL_DESINFECTION, SCAN_INTERVAL_DEVICE,
                     SECOUND_TO_HOUR_FACTOR,
                     UNITS, LuxMode)
-from .helpers.helper import get_sensor_text, get_sensor_value_text
+from .helpers.helper import get_sensor_text, get_sensor_value_text, get_yaml_unique_id
 from .luxtronik_device import LuxtronikDevice
-from .model import LuxtronikConfigEntry, get_runtime_data
+from .model import LuxtronikConfigEntry
 
 # endregion Imports
 
@@ -54,74 +52,50 @@ async def async_setup_platform(
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType = None,
 ) -> None:
-    """Set up a Luxtronik sensor from yaml config."""
-    LOGGER.info(
-        f"{DOMAIN}.sensor.async_setup_platform ConfigType: %s - discovery_info: %s",
-        config,
-        discovery_info,
-    )
-    runtime_data = get_runtime_data(hass)
-    if not runtime_data:
+    """Accept the YAML config; the config entry creates its sensors.
+
+    Entities without a config entry can't belong to a device, so the integration
+    syncs the YAML sensors into the config entry when it is set up.
+    """
+    if not hass.config_entries.async_entries(DOMAIN):
         LOGGER.warning("%s.sensor.async_setup_platform no luxtronik!", DOMAIN)
-        return False
-    luxtronik = runtime_data.device
 
-    # use_legacy_sensor_ids = hass.data[f"{DOMAIN}_{CONF_USE_LEGACY_SENSOR_IDS}"]
-    # LOGGER.info("sensor.async_setup_platform use_legacy_sensor_ids: '%s'",
-    #             use_legacy_sensor_ids)
 
-    sensors = config.get(CONF_SENSORS)
+def _yaml_entities(
+    luxtronik: LuxtronikDevice, device_info: DeviceInfo, sensors: list[dict]
+) -> list["LuxtronikSensor"]:
+    """Create the sensors configured in YAML."""
     entities = []
-    if sensors:
-        # region yaml sensors part:
-        for sensor_cfg in sensors:
-            sensor_id = sensor_cfg[CONF_ID]
-            if "." in sensor_id:
-                group = sensor_id.split(".")[0]
-                sensor_id = sensor_id.split(".")[1]
-            else:
-                group = sensor_cfg[CONF_GROUP]
-            sensor = luxtronik.get_sensor(group, sensor_id)
-            if sensor:
-                name = (
-                    sensor.name
-                    if not sensor_cfg.get(CONF_FRIENDLY_NAME)
-                    else sensor_cfg.get(CONF_FRIENDLY_NAME)
-                )
-                icon = (
-                    ICONS.get(sensor.measurement_type)
-                    if not sensor_cfg.get(CONF_ICON)
-                    else sensor_cfg.get(CONF_ICON)
-                )
-                entity = LuxtronikSensor(
-                    luxtronik=luxtronik,
-                    # YAML platforms have no config entry, so their entities can't belong to a device.
-                    device_info=None,
-                    sensor_key=f"{group}.{sensor_id}",
-                    unique_id=sensor_id,
-                    icon=icon,
-                    device_class=DEVICE_CLASSES.get(
-                        sensor.measurement_type, DEFAULT_DEVICE_CLASS
-                    ),
-                    state_class=None,
-                    unit_of_measurement=UNITS.get(sensor.measurement_type),
-                )
-                # Keep the unique_id and name of sensors configured in YAML.
-                entity._attr_has_entity_name = False
-                entity._attr_translation_key = None
-                entity._attr_name = name
-                entity._attr_unique_id = ENTITY_ID_FORMAT.format(f"{DOMAIN}_{sensor_id}")
-                entities += [entity]
-            else:
-                LOGGER.warning(
-                    "%s.sensor.async_setup_platform: Invalid Luxtronik ID %s in group %s",
-                    DOMAIN,
-                    sensor_id,
-                    group,
-                )
-        # endregion yaml sensors part
-
-    async_add_entities(entities)
+    for sensor_cfg in sensors:
+        group, sensor_id = sensor_cfg[CONF_ID].split(".", 1)
+        sensor = luxtronik.get_sensor(group, sensor_id)
+        if not sensor:
+            LOGGER.warning(
+                "%s.sensor: Invalid Luxtronik ID %s in group %s",
+                DOMAIN,
+                sensor_id,
+                group,
+            )
+            continue
+        entity = LuxtronikSensor(
+            luxtronik=luxtronik,
+            device_info=device_info,
+            sensor_key=sensor_cfg[CONF_ID],
+            unique_id=sensor_id,
+            icon=sensor_cfg.get(CONF_ICON) or ICONS.get(sensor.measurement_type),
+            device_class=DEVICE_CLASSES.get(
+                sensor.measurement_type, DEFAULT_DEVICE_CLASS
+            ),
+            state_class=None,
+            unit_of_measurement=UNITS.get(sensor.measurement_type),
+        )
+        # Keep the unique_id and name of sensors configured in YAML.
+        entity._attr_has_entity_name = False
+        entity._attr_translation_key = None
+        entity._attr_name = sensor_cfg.get(CONF_FRIENDLY_NAME) or sensor.name
+        entity._attr_unique_id = get_yaml_unique_id(sensor_cfg[CONF_ID])
+        entities += [entity]
+    return entities
 
 
 async def async_setup_entry(
@@ -705,6 +679,10 @@ async def async_setup_entry(
             )
         ]
 
+    entities += _yaml_entities(
+        luxtronik, device_info, config_entry.options.get(CONF_SENSORS, [])
+    )
+
     async_add_entities(entities)
 
 # async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -733,7 +711,7 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
     def __init__(
         self,
         luxtronik: LuxtronikDevice,
-        device_info: DeviceInfo | ChildDeviceInfo | None,
+        device_info: DeviceInfo | ChildDeviceInfo,
         sensor_key: str,
         unique_id: str,
         icon: str = "mdi:thermometer",

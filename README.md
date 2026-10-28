@@ -116,6 +116,8 @@ Not all heatpumps have build in electrical energy metering and instead only show
 
 The most usefull sensors and parameters are created automaticly. But if you miss a sensor you can add it manually via yaml configuration like the original module from [Bouni/luxtronik](https://github.com/Bouni/luxtronik).
 
+These sensors belong to the heatpump device, so Home Assistant shows them with the name of the heatpump in front of their name. Changes to them take effect after restarting Home Assistant. Sensors removed from the `configuration.yaml` are removed from Home Assistant. The options `scan_interval` and `entity_namespace` of the platforms are not supported.
+
 A short description of many of the available sensors can be found here [Loxwiki - Luxtronik Java Web Interface](https://loxwiki.atlassian.net/wiki/spaces/LOX/pages/1533935933/Java+Webinterface)
 
 #### Parameter IDs

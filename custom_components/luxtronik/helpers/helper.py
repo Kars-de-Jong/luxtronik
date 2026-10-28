@@ -2,7 +2,9 @@
 import json
 import os.path
 
-from ..const import LANG_DEFAULT, LANGUAGES_SENSOR_NAMES, LOGGER
+from homeassistant.components.sensor import ENTITY_ID_FORMAT
+
+from ..const import DOMAIN, LANG_DEFAULT, LANGUAGES_SENSOR_NAMES, LOGGER
 
 __content_locale__ = None
 __content_default__ = None
@@ -87,3 +89,8 @@ def get_sensor_value_text(
         content,
     )
     return key.replace("_", " ").title()
+
+
+def get_yaml_unique_id(sensor_key: str) -> str:
+    """Get the unique_id of a sensor configured in YAML, kept from the YAML platforms."""
+    return ENTITY_ID_FORMAT.format(f"{DOMAIN}_{sensor_key.split('.')[-1]}")

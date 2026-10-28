@@ -4,9 +4,14 @@
 from dataclasses import dataclass
 from functools import partial
 
+import homeassistant.helpers.config_validation as cv
+import voluptuous as vol
+from homeassistant.config import config_per_platform
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP
-from homeassistant.core import Event, HomeAssistant, ServiceCall
+from homeassistant.const import (CONF_BINARY_SENSORS, CONF_ENTITY_NAMESPACE, CONF_HOST, CONF_ID,
+                                 CONF_PORT, CONF_SCAN_INTERVAL, CONF_SENSORS,
+                                 EVENT_HOMEASSISTANT_STOP, Platform)
+from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -18,6 +23,7 @@ from luxtronik import LOGGER as LuxLogger
 from .const import (
     ATTR_PARAMETER,
     ATTR_VALUE,
+    CONF_GROUP,
     CONF_LOCK_TIMEOUT,
     CONF_SAFE,
     CONF_UPDATE_IMMEDIATELY_AFTER_WRITE,
@@ -26,9 +32,11 @@ from .const import (
     PLATFORMS,
     SERVICE_WRITE,
     SERVICE_WRITE_SCHEMA,
+    YAML_BINARY_SENSOR_SCHEMA,
+    YAML_SENSOR_SCHEMA,
 )
 from .const import CONFIG_SCHEMA  # noqa: F401
-from .helpers.helper import get_sensor_text
+from .helpers.helper import get_sensor_text, get_yaml_unique_id
 from .luxtronik_device import LuxtronikDevice
 from .model import LuxtronikConfigEntry, LuxtronikRuntimeData
 
@@ -36,6 +44,11 @@ from .model import LuxtronikConfigEntry, LuxtronikRuntimeData
 
 # region Constants
 LuxLogger.setLevel(level="WARNING")
+# The YAML platforms, with the config entry option that stores their sensors.
+YAML_PLATFORMS = {
+    Platform.SENSOR: (CONF_SENSORS, YAML_SENSOR_SCHEMA),
+    Platform.BINARY_SENSOR: (CONF_BINARY_SENSORS, YAML_BINARY_SENSOR_SCHEMA),
+}
 # endregion Constants
 
 
@@ -83,6 +96,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEn
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the luxtronik component."""
+    _async_sync_yaml_sensors(hass, config)
 
     async def write_parameter(service: ServiceCall) -> None:
         """Write a parameter to the Luxtronik heatpump."""
@@ -112,6 +126,62 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         DOMAIN, SERVICE_WRITE, write_parameter, schema=SERVICE_WRITE_SCHEMA
     )
     return True
+
+
+@callback
+def _async_sync_yaml_sensors(hass: HomeAssistant, config: ConfigType) -> None:
+    """Store the sensors of the YAML platforms in the config entry, which creates them.
+
+    Entities without a config entry can't belong to a device. The YAML stays the source of
+    truth: it is synced at every start, and sensors removed from it are removed.
+    """
+    options = {}
+    for domain, (key, schema) in YAML_PLATFORMS.items():
+        sensors = []
+        for platform, platform_config in config_per_platform(config, domain):
+            if platform != DOMAIN:
+                continue
+            for option in (CONF_SCAN_INTERVAL, CONF_ENTITY_NAMESPACE):
+                if option in platform_config:
+                    LOGGER.warning("Option %s of the %s %s platform is ignored", option, DOMAIN, domain)
+            for sensor_cfg in cv.ensure_list(platform_config.get(CONF_SENSORS)):
+                try:
+                    sensor_cfg = schema(sensor_cfg)
+                except vol.Invalid as err:
+                    LOGGER.error("Invalid %s %s %s: %s", DOMAIN, domain, sensor_cfg, err)
+                    continue
+                sensor_key = sensor_cfg.pop(CONF_ID)
+                group = sensor_cfg.pop(CONF_GROUP, None)
+                if "." not in sensor_key:
+                    if group is None:
+                        LOGGER.error("%s %s %s has no group", DOMAIN, domain, sensor_key)
+                        continue
+                    sensor_key = f"{group}.{sensor_key}"
+                sensors.append({CONF_ID: sensor_key, **sensor_cfg})
+        if sensors:
+            options[key] = sensors
+
+    entries = hass.config_entries.async_entries(DOMAIN)
+    if not entries:
+        return
+    config_entry = entries[0]
+
+    ent_reg = er.async_get(hass)
+    for domain, (key, _) in YAML_PLATFORMS.items():
+        kept = {get_yaml_unique_id(sensor[CONF_ID]) for sensor in options.get(key, [])}
+        for sensor in config_entry.options.get(key, []):
+            unique_id = get_yaml_unique_id(sensor[CONF_ID])
+            if unique_id not in kept and (
+                entity_id := ent_reg.async_get_entity_id(domain, DOMAIN, unique_id)
+            ):
+                ent_reg.async_remove(entity_id)
+
+    new_options = {
+        key: value for key, value in config_entry.options.items()
+        if key not in (CONF_SENSORS, CONF_BINARY_SENSORS)
+    } | options
+    if new_options != config_entry.options:
+        hass.config_entries.async_update_entry(config_entry, options=new_options)
 
 
 def connect_luxtronik(data) -> tuple[LuxtronikDevice, bool]:
