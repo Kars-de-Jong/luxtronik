@@ -10,6 +10,7 @@ from homeassistant.components.binary_sensor import (BinarySensorDeviceClass,
 from homeassistant.components.sensor import ENTITY_ID_FORMAT
 from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID, CONF_SENSORS)
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -300,7 +301,7 @@ class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
     def __init__(
         self,
         luxtronik: LuxtronikDevice,
-        deviceInfo: DeviceInfo,
+        deviceInfo: DeviceInfo | ChildDeviceInfo,
         sensor_key: str,
         unique_id: str,
         icon: str,

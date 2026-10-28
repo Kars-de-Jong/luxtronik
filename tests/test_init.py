@@ -5,6 +5,7 @@ import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -87,3 +88,47 @@ async def test_write_action_after_unload(hass, luxtronik):
         await hass.services.async_call(
             DOMAIN, SERVICE_WRITE, {"parameter": "ID_Ba_Hz_akt", "value": "Automatic"},
             blocking=True)
+
+
+@pytest.mark.parametrize("cooling_present", [True, False])
+async def test_sub_devices_are_children_of_the_heatpump(hass, luxtronik, cooling_present):
+    """Heating, domestic water and cooling are child devices of the heatpump."""
+    luxtronik.detect_cooling_present.return_value = cooling_present
+    entry = await _setup_entry(hass)
+
+    dev_reg = dr.async_get(hass)
+    heatpump = dev_reg.async_get_device_by_identifier((DOMAIN, "2311_1234_abcd_heatpump"), entry.entry_id)
+    assert heatpump is not None
+    for part in ("heating", "domestic_water"):
+        child = dev_reg.async_get_child_device_by_identifier((DOMAIN, f"2311_1234_abcd_{part}"), entry.entry_id)
+        assert child is not None
+        assert child.parent_device_id == heatpump.id
+    cooling = dev_reg.async_get_child_device_by_identifier((DOMAIN, "2311_1234_abcd_cooling"), entry.entry_id)
+    if cooling_present:
+        assert cooling.parent_device_id == heatpump.id
+    else:
+        assert cooling is None
+        assert dev_reg.async_get_device_by_identifier((DOMAIN, "2311_1234_abcd_cooling"), entry.entry_id) is None
+
+
+async def test_existing_sub_device_is_converted_to_child(hass, luxtronik):
+    """An existing heating device becomes a child device and keeps its id."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, version=3, unique_id="2311_1234_abcd",
+        data={CONF_HOST: "10.0.0.2", CONF_PORT: 8889, CONF_SAFE: True, CONF_LOCK_TIMEOUT: 30,
+              CONF_UPDATE_IMMEDIATELY_AFTER_WRITE: True})
+    entry.add_to_hass(hass)
+    dev_reg = dr.async_get(hass)
+    old = dev_reg.async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={(DOMAIN, "2311_1234_abcd_heating")},
+        name="Heating", manufacturer="Alpha Innotec", model="LWD")
+    # The device was registered by an earlier version, in an earlier session.
+    dev_reg.async_config_entry_unloaded(entry.entry_id)
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    child = dev_reg.async_get_child_device_by_identifier(
+        (DOMAIN, "2311_1234_abcd_heating"), entry.entry_id)
+    assert child.id == old.id
+    assert dev_reg.async_get_device_by_identifier((DOMAIN, "2311_1234_abcd_heating"), entry.entry_id) is None

@@ -12,6 +12,7 @@ from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
                                  UnitOfPressure, UnitOfTemperature, UnitOfTime)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -732,7 +733,7 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
     def __init__(
         self,
         luxtronik: LuxtronikDevice,
-        device_info: DeviceInfo,
+        device_info: DeviceInfo | ChildDeviceInfo,
         sensor_key: str,
         unique_id: str,
         icon: str = "mdi:thermometer",

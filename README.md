@@ -39,7 +39,7 @@ Before you install this integration, make sure you have:
 - The controller **connected to your local network with an ethernet cable**. Home Assistant must be able to reach it.
 - A **fixed IP address** for the controller. Configure a DHCP reservation (static lease) in your router, so the address does not change.
 - The **network port** of the controller. This is usually `8889`; controllers with older firmware use `8888`.
-- **Home Assistant 2024.11.0 or newer**.
+- **Home Assistant 2026.9.0 or newer**.
 - [HACS](https://hacs.xyz/) installed, if you want to use the recommended installation method.
 
 ## 2. Installation

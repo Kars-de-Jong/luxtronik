@@ -10,6 +10,7 @@ from homeassistant.core import Event, HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityDescription
 from homeassistant.helpers.typing import ConfigType
 from luxtronik import LOGGER as LuxLogger
@@ -28,7 +29,6 @@ from .const import (
 )
 from .const import CONFIG_SCHEMA  # noqa: F401
 from .helpers.helper import get_sensor_text
-from .helpers.lux_helper import get_manufacturer_firmware_url_by_model
 from .luxtronik_device import LuxtronikDevice
 from .model import LuxtronikConfigEntry, LuxtronikRuntimeData
 
@@ -57,15 +57,17 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEn
     config_entry.async_on_unload(config_entry.add_update_listener(async_reload_entry))
 
     try:
-        config_entry.runtime_data = await hass.async_add_executor_job(
-            build_runtime_data, hass, config_entry.data
+        luxtronik, cooling_present = await hass.async_add_executor_job(
+            connect_luxtronik, config_entry.data
         )
     except OSError as err:
         raise ConfigEntryNotReady(
             f"Unable to connect to heatpump at {config_entry.data[CONF_HOST]}"
         ) from err
 
-    luxtronik = config_entry.runtime_data.device
+    config_entry.runtime_data = build_runtime_data(
+        hass, config_entry, luxtronik, cooling_present
+    )
 
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
@@ -112,8 +114,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-def build_runtime_data(hass: HomeAssistant, data) -> LuxtronikRuntimeData:
-    """Connect to the heatpump and build the runtime data."""
+def connect_luxtronik(data) -> tuple[LuxtronikDevice, bool]:
+    """Connect to the heatpump and detect whether cooling is present."""
     host = data[CONF_HOST]
     port = data[CONF_PORT]
     safe = data[CONF_SAFE]
@@ -123,6 +125,17 @@ def build_runtime_data(hass: HomeAssistant, data) -> LuxtronikRuntimeData:
     # LOGGER.info("setup_internal use_legacy_sensor_ids: '%s'",
     #             use_legacy_sensor_ids)
 
+    luxtronik = LuxtronikDevice(host, port, safe, lock_timeout)
+    luxtronik.read()
+
+    return luxtronik, luxtronik.detect_cooling_present()
+
+
+def build_runtime_data(
+    hass: HomeAssistant, config_entry: LuxtronikConfigEntry,
+    luxtronik: LuxtronikDevice, cooling_present: bool
+) -> LuxtronikRuntimeData:
+    """Register the heatpump device and build the runtime data."""
     # Build Sensor names with local language:
     lang = hass.config.language
     text_domestic_water = get_sensor_text(lang, "domestic_water")
@@ -130,46 +143,28 @@ def build_runtime_data(hass: HomeAssistant, data) -> LuxtronikRuntimeData:
     text_heatpump = get_sensor_text(lang, "heatpump")
     text_cooling = get_sensor_text(lang, "cooling")
 
-    luxtronik = LuxtronikDevice(host, port, safe, lock_timeout)
-    luxtronik.read()
-
-    # Create DeviceInfos:
-    device_info = build_device_info(luxtronik, text_heatpump, data[CONF_HOST])
-    device_info_domestic_water = DeviceInfo(
-        identifiers={(DOMAIN, f"{luxtronik.unique_id}_domestic_water")},
-        configuration_url="https://www.heatpump24.com/",
-        name=text_domestic_water,
-        manufacturer=luxtronik.manufacturer,
-        model=luxtronik.model,
-        entry_type=None,
-        hw_version=None,
-        sw_version=None,
-        connections=None,
+    # Create DeviceInfos. The heatpump must be registered before its child devices:
+    device_info = build_device_info(luxtronik, text_heatpump, config_entry.data[CONF_HOST])
+    heatpump = dr.async_get(hass).async_get_or_create(
+        config_entry_id=config_entry.entry_id, **device_info
     )
-    device_info_heating = DeviceInfo(
+    device_info_domestic_water = ChildDeviceInfo(
+        identifiers={(DOMAIN, f"{luxtronik.unique_id}_domestic_water")},
+        name=text_domestic_water,
+        parent_device_id=heatpump.id,
+    )
+    device_info_heating = ChildDeviceInfo(
         identifiers={(DOMAIN, f"{luxtronik.unique_id}_heating")},
-        configuration_url=get_manufacturer_firmware_url_by_model(luxtronik.model),
         name=text_heating,
-        manufacturer=luxtronik.manufacturer,
-        model=luxtronik.model,
-        entry_type=None,
-        hw_version=None,
-        sw_version=None,
-        connections=None,
+        parent_device_id=heatpump.id,
     )
     device_info_cooling = (
-        DeviceInfo(
+        ChildDeviceInfo(
             identifiers={(DOMAIN, f"{luxtronik.unique_id}_cooling")},
-            configuration_url=get_manufacturer_firmware_url_by_model(luxtronik.model),
             name=text_cooling,
-            manufacturer=luxtronik.manufacturer,
-            model=luxtronik.model,
-            entry_type=None,
-            hw_version=None,
-            sw_version=None,
-            connections=None,
+            parent_device_id=heatpump.id,
         )
-        if luxtronik.detect_cooling_present()
+        if cooling_present
         else None
     )
     return LuxtronikRuntimeData(

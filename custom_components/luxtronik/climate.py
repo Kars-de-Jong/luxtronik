@@ -8,6 +8,7 @@ from homeassistant.components.climate.const import HVACAction, HVACMode, PRESET_
 from homeassistant.components.water_heater import ATTR_TEMPERATURE
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -134,7 +135,7 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
     _last_lux_mode: LuxMode = None
     _last_hvac_action = None
 
-    def __init__(self, luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo, control_mode_home_assistant: bool, current_temperature_sensor: str):
+    def __init__(self, luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo | ChildDeviceInfo, control_mode_home_assistant: bool, current_temperature_sensor: str):
         self._luxtronik = luxtronik
         self._attr_device_info = deviceInfo
         self._attr_unique_id = f"{luxtronik.unique_id}_{self._key}"

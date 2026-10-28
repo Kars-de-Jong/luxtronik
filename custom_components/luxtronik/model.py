@@ -4,6 +4,7 @@ from typing import TypedDict
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo
 
 from .const import DOMAIN
@@ -21,9 +22,9 @@ class LuxtronikRuntimeData:
 
     device: LuxtronikDevice
     device_info: DeviceInfo
-    device_info_domestic_water: DeviceInfo
-    device_info_heating: DeviceInfo
-    device_info_cooling: DeviceInfo | None
+    device_info_domestic_water: ChildDeviceInfo
+    device_info_heating: ChildDeviceInfo
+    device_info_cooling: ChildDeviceInfo | None
 
 
 type LuxtronikConfigEntry = ConfigEntry[LuxtronikRuntimeData]

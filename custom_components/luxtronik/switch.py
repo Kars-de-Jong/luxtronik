@@ -5,6 +5,7 @@ from typing import Any
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -110,7 +111,7 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
     def __init__(
         self,
         luxtronik: LuxtronikDevice,
-        device_info: DeviceInfo,
+        device_info: DeviceInfo | ChildDeviceInfo,
         sensor_key: str,
         unique_id: str,
         icon: str,
