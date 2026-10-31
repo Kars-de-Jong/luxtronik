@@ -24,6 +24,8 @@ Conventions from the Bronze work:
 - **README:** `README.md` (section "5. Actions") currently warns users to leave 3 s between calls. Update that text after the fix.
 
 ### 2. The lock is released even when acquiring it timed out
+**Fixed** in `09d346c`.
+
 - **Where:** `luxtronik_device.py`:
   - `__write`: `acquire` at line ~201, `release` in `finally` at ~218.
   - `read`: `acquire` at ~241, `release` at ~249.
@@ -32,11 +34,15 @@ Conventions from the Bronze work:
 - **Test:** hold the lock in the test, use a tiny `_lock_timeout_sec`, call `read()`, and expect the warning log and no exception.
 
 ### 3. Thermal disinfection stores the method instead of the date
+**Fixed** in `a2c9286`.
+
 - **Where:** `number.py:354`, `LuxtronikNumberThermalDesinfection.update`.
 - **Problem:** `self._last_thermal_desinfection = datetime.now().date` is missing `()`. Because of that, the comparison at line 353 (`isinstance(..., date)`) never sees a real date afterwards. Also check how the value is restored from state attributes in `async_added_to_hass`: it comes back as a string there.
 - **Fix:** use `datetime.now().date()`, and parse the restored attribute back to a `date`.
 
 ### 4. The v1 config entry migration blocks the event loop
+**Fixed** in `1f27527`.
+
 - **Where:** `__init__.py:239-241`, `async_migrate_entry`.
 - **Problem:** `LuxtronikDevice.connect(...)` runs synchronously in the event loop, and a connection `OSError` is not handled.
 - **Fix:**
@@ -50,7 +56,7 @@ Conventions from the Bronze work:
   - `luxtronik_device.read()` is called in `async_setup_entry` (line ~45) and again in the entity `__init__` (~85). This is blocking socket I/O in the event loop.
   - The `latest_version` property (~97) calls `_request_available_firmware_version()` on every state write until the first answer has arrived. Each call starts a new `threading.Thread` doing `requests.get(...)` (~134-157), so several requests can run at the same time.
 - **Fix idea:**
-  - Remove the reads; the device was already read during setup in `build_runtime_data`.
+  - ~~Remove the reads~~ (done in `b167aa1`).
   - Fetch the firmware version in `async_update` using HA's aiohttp session (`async_get_clientsession`). That also covers the Platinum rules `inject-websession` and `async-dependency`, both `todo` in `quality_scale.yaml`.
   - Keep `SCAN_INTERVAL = 1h`.
 
@@ -83,6 +89,8 @@ Conventions from the Bronze work:
 - **Fix idea:** raise `PlatformNotReady` instead of returning, so HA retries.
 
 ### 10. Device info `sw_version` may not be a string
+**Fixed** in `dd140b4`.
+
 - **Where:** `__init__.py:226`, `sw_version=luxtronik.get_value("calculations.ID_WEB_SoftStand")`.
 - **Problem:** HA warns that a non-string `sw_version` will fail from 2026.12. In the tests the value is an int because the mock returns 1. In real use it is probably a string, but nothing guarantees it.
 - **Fix:** wrap it in `str(...)`, or use `luxtronik.firmware_version`, which already does `str()`.
@@ -113,6 +121,21 @@ Running hassfest (see Conventions) currently reports:
 - **`manifest.json` has a `homeassistant` key.** Not a valid manifest option; the minimum version belongs in `hacs.json` only, which already has it. Remove it from the manifest.
 - **Domain does not match the directory name.** The domain is `luxtronik2`, the directory is `luxtronik`. Renaming either one is a breaking change (entity IDs, config entries, the `luxtronik2.write` action, YAML config), inherited from upstream. Decide whether to fix it with a migration or accept this error.
 - **Invalid translation key `-1`** in `entity.sensor.switchoff_reason.state` in `strings.json` and `translations/en.json`. State keys must match `[a-z0-9-_]+` and can't start with a hyphen. Map the value `-1` to a valid key (e.g. `unknown`) in the sensor, then rename the translation key.
+
+### 14. Findings from the best practices review
+Fixed: status text entity IDs (`dca88d5`), reads in the event loop during setup (`b167aa1`), diagnostics (`271456b`), climate source sensor without a number (`5d55250`), library log level (`5ed06dc`), invalid device classes and unit (`224f5c3`), `ATTR_TEMPERATURE` import (`483f582`).
+
+Open:
+- **Use a `DataUpdateCoordinator`.** Every entity polls and calls the throttled `luxtronik.update()`. A coordinator in `runtime_data` with a shared `CoordinatorEntity` base class covers `entity-unavailable`, `log-when-unavailable` and `parallel-updates`, and lets writes call `async_request_refresh()` instead of `time.sleep(3)` + `read()`. Do this together with items 1, 5 and 8.
+- **Use HA translations instead of the own text files.** Device names via `translation_key` on the device info, status sensors as `SensorDeviceClass.ENUM` with translated states, the action texts in the `services` section of `strings.json`, exception translations. `translations/climate.de.json` is not loaded by anything.
+- **Icons:** move the `icon` properties to `icons.json` (`icon-translations`).
+- **Extra state attributes** have free-text German keys (`'WP Seit (ID_WEB_Time_WPein_akt)'`, `'EVU first start time'`) and every entity has `Luxtronik_Key`. Prefer snake_case keys, or separate disabled-by-default diagnostic sensors. Breaking for automations that use them.
+- **Config flow:** `FlowResult` is deprecated, use `ConfigFlowResult`; type `async_step_dhcp` with `DhcpServiceInfo`; consider `OptionsFlowWithReload` instead of the update listener.
+- **Dead code:** `async_setup_platform` with `pass` in `climate.py` and `number.py`; the `EVENT_HOMEASSISTANT_STOP` listener calls a no-op `disconnect()`; `f"sensor.{DOMAIN}_status_time"` in `recorder.py` is an entity ID in a list of attribute names.
+- **Logging:** setup logs the full config entry at `info` level; f-strings in log calls; `LOGGER.critical(group_sensor_id, error)` in `get_sensor_by_id` has no format string.
+- **`manifest.json`:** `after_dependencies: ["http"]` looks unused; `requests` is used but undeclared (goes away with item 5).
+- **`LuxtronikEntityDescription`** should be `@dataclass(frozen=True, kw_only=True)`.
+- **`setup.cfg`:** mypy targets Python 3.7 with `ignore_errors = true`.
 
 ## Next quality scale tier (Silver)
 See `quality_scale.yaml` for the full list. The relevant items found so far:
