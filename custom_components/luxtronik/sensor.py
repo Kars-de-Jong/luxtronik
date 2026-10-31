@@ -9,7 +9,7 @@ from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
                                  STATE_UNAVAILABLE,
                                  UnitOfElectricPotential, UnitOfEnergy, UnitOfPower,
                                  UnitOfPressure, UnitOfTemperature, UnitOfTime)
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
@@ -29,18 +29,17 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, ATTR_STATUS_TEXT,
                     LUX_STATUS3_WORKAROUND, LUX_STATUS_DOMESTIC_WATER,
                     LUX_STATUS_EVU, LUX_STATUS_HEATING, LUX_STATUS_NO_REQUEST,
                     LUX_STATUS_COOLING,
-                    LUX_STATUS_THERMAL_DESINFECTION, SCAN_INTERVAL_DEVICE,
+                    LUX_STATUS_THERMAL_DESINFECTION,
                     SECOUND_TO_HOUR_FACTOR,
                     UNITS, LuxMode)
 from .helpers.helper import get_sensor_text, get_sensor_value_text, get_yaml_unique_id
-from .luxtronik_device import LuxtronikDevice
+from .coordinator import LuxtronikCoordinator
+from .entity import LuxtronikEntity
 from .model import LuxtronikConfigEntry
 
 # endregion Imports
 
 # region Constants
-# The device read is throttled, so all entities share one controller read.
-SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 # endregion Constants
 
 # region Setup
@@ -62,13 +61,13 @@ async def async_setup_platform(
 
 
 def _yaml_entities(
-    luxtronik: LuxtronikDevice, device_info: DeviceInfo, sensors: list[dict]
+    coordinator: LuxtronikCoordinator, device_info: DeviceInfo, sensors: list[dict]
 ) -> list["LuxtronikSensor"]:
     """Create the sensors configured in YAML."""
     entities = []
     for sensor_cfg in sensors:
         group, sensor_id = sensor_cfg[CONF_ID].split(".", 1)
-        sensor = luxtronik.get_sensor(group, sensor_id)
+        sensor = coordinator.device.get_sensor(group, sensor_id)
         if not sensor:
             LOGGER.warning(
                 "%s.sensor: Invalid Luxtronik ID %s in group %s",
@@ -78,7 +77,7 @@ def _yaml_entities(
             )
             continue
         entity = LuxtronikSensor(
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             device_info=device_info,
             sensor_key=sensor_cfg[CONF_ID],
             unique_id=sensor_id,
@@ -105,7 +104,8 @@ async def async_setup_entry(
 ) -> None:
     """Set up a Luxtronik sensor from ConfigEntry."""
     LOGGER.info(f"{DOMAIN}.sensor.async_setup_entry ConfigType: %s", config_entry)
-    luxtronik = config_entry.runtime_data.device
+    coordinator = config_entry.runtime_data.coordinator
+    luxtronik = coordinator.device
 
     device_info = config_entry.runtime_data.device_info
 
@@ -123,7 +123,7 @@ async def async_setup_entry(
 
     entities = [
         LuxtronikStatusSensor(
-            luxtronik,
+            coordinator,
             device_info,
             LUX_SENSOR_STATUS,
             "status",
@@ -134,7 +134,7 @@ async def async_setup_entry(
             # entity_category=EntityCategory.DIAGNOSTIC,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_HauptMenuStatus_Zeit",
             "status_time",
@@ -163,7 +163,7 @@ async def async_setup_entry(
             }
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             LUX_SENSOR_STATUS1,
             "status_line_1",
@@ -175,7 +175,7 @@ async def async_setup_entry(
             entity_registry_visible_default=False,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_HauptMenuStatus_Zeile2",
             "status_line_2",
@@ -187,7 +187,7 @@ async def async_setup_entry(
             entity_registry_visible_default=False,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             LUX_SENSOR_STATUS3,
             "status_line_3",
@@ -199,28 +199,28 @@ async def async_setup_entry(
             entity_registry_visible_default=False,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_Temperatur_TWE",
             "heat_source_input_temperature",
             entity_category=None,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_Temperatur_TA",
             "outdoor_temperature",
             entity_category=None,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_Mitteltemperatur",
             "outdoor_temperature_average",
             entity_category=None,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             sensor_key="calculations.ID_WEB_Zaehler_BetrZeitImpVD1",
             unique_id="compressor_impulses",
@@ -231,7 +231,7 @@ async def async_setup_entry(
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             sensor_key="calculations.ID_WEB_Zaehler_BetrZeitVD1",
             unique_id="operation_hours_compressor1",
@@ -247,7 +247,7 @@ async def async_setup_entry(
     if has_second_compressor:
         entities += [
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitVD2",
                 unique_id="operation_hours_compressor2",
@@ -259,7 +259,7 @@ async def async_setup_entry(
                 factor=SECOUND_TO_HOUR_FACTOR,
             ),
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitImpVD2",
                 unique_id="compressor_impulses2",
@@ -273,7 +273,7 @@ async def async_setup_entry(
 
     entities += [
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             sensor_key="calculations.ID_WEB_Zaehler_BetrZeitWP",
             unique_id="operation_hours",
@@ -285,7 +285,7 @@ async def async_setup_entry(
             factor=SECOUND_TO_HOUR_FACTOR,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             sensor_key="calculations.ID_WEB_WMZ_Seit",
             unique_id="heat_amount_counter",
@@ -297,14 +297,14 @@ async def async_setup_entry(
         ),
 
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_Temperatur_THG",
             "hot_gas_temperature",
             entity_category=None,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_LIN_ANSAUG_VERDICHTER",
             "suction_compressor_temperature",
@@ -312,7 +312,7 @@ async def async_setup_entry(
             entity_registry_enabled_default=False,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_LIN_ANSAUG_VERDAMPFER",
             "suction_evaporator_temperature",
@@ -320,14 +320,14 @@ async def async_setup_entry(
             entity_registry_enabled_default=False,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_LIN_VDH",
             "compressor_heating_temperature",
             entity_category=None,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_LIN_UH",
             "overheating_temperature",
@@ -337,7 +337,7 @@ async def async_setup_entry(
             entity_registry_enabled_default=False,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_LIN_UH_Soll",
             "overheating_target_temperature",
@@ -346,7 +346,7 @@ async def async_setup_entry(
             entity_registry_enabled_default=False,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_LIN_HD",
             "high_pressure",
@@ -357,7 +357,7 @@ async def async_setup_entry(
             icon="mdi:gauge-full",
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             "calculations.ID_WEB_LIN_ND",
             "low_pressure",
@@ -368,7 +368,7 @@ async def async_setup_entry(
             icon="mdi:gauge-low",
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             sensor_key="calculations.ID_WEB_Zaehler_BetrZeitZWE1",
             unique_id="operation_hours_additional_heat_generator",
@@ -380,7 +380,7 @@ async def async_setup_entry(
             factor=SECOUND_TO_HOUR_FACTOR,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             sensor_key="calculations.ID_WEB_AnalogOut1",
             unique_id="analog_out1",
@@ -391,7 +391,7 @@ async def async_setup_entry(
             factor=0.1,
         ),
         LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info,
             sensor_key="calculations.ID_WEB_AnalogOut2",
             unique_id="analog_out2",
@@ -404,7 +404,7 @@ async def async_setup_entry(
         LuxtronikIndexStatusSensor(
             key_index=None,
             key_timestamp_template=None,
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             device_info=device_info,
             sensor_key="Switchoff",
             unique_id="switchoff_reason",
@@ -417,7 +417,7 @@ async def async_setup_entry(
         LuxtronikIndexStatusSensor(
             key_index="calculations.ID_WEB_AnzahlFehlerInSpeicher",
             key_timestamp_template="calculations.ID_WEB_ERROR_Time0",
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             device_info=device_info,
             sensor_key="calculations.ID_WEB_ERROR_Nr0",
             unique_id="error_reason",
@@ -431,7 +431,7 @@ async def async_setup_entry(
     if luxtronik.get_value("calculations.Heat_Output") is not None:
         entities += [
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info,
                 sensor_key="calculations.Heat_Output",
                 unique_id="current_heat_output",
@@ -442,7 +442,7 @@ async def async_setup_entry(
             ),
         ]
     add_sensor_if_active(luxtronik, entities, "visibilities.ID_Visi_Waermemenge_ZWE", LuxtronikSensor(
-        luxtronik,
+        coordinator,
         device_info,
         sensor_key="parameters.ID_Waermemenge_ZWE",
         unique_id="additional_heat_generator_amount_counter",
@@ -457,7 +457,7 @@ async def async_setup_entry(
     if device_info.get('model') != 'LD7':
         entities += [
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info,
                 "calculations.ID_WEB_Freq_VD",
                 "pump_frequency",
@@ -468,7 +468,7 @@ async def async_setup_entry(
                 device_class=SensorDeviceClass.FREQUENCY,
             ),
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info,
                 "calculations.ID_WEB_Temperatur_TWA",
                 "heat_source_output_temperature",
@@ -483,14 +483,14 @@ async def async_setup_entry(
         if has_room_temp:
             entities += [
                 LuxtronikSensor(
-                    luxtronik,
+                    coordinator,
                     device_info_heating,
                     "calculations.ID_WEB_RBE_RT_Ist",
                     "room_temperature",
                     entity_category=None,
                 ),
                 LuxtronikSensor(
-                    luxtronik,
+                    coordinator,
                     device_info_heating,
                     "calculations.ID_WEB_RBE_RT_Soll",
                     "room_target_temperature",
@@ -500,7 +500,7 @@ async def async_setup_entry(
 
         entities += [
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info_heating,
                 "calculations.ID_WEB_Temperatur_TVL",
                 "flow_in_temperature",
@@ -511,7 +511,7 @@ async def async_setup_entry(
                 }
             ),
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info_heating,
                 "calculations.ID_WEB_Temperatur_TRL",
                 "flow_out_temperature",
@@ -519,14 +519,14 @@ async def async_setup_entry(
                 entity_category=None,
             ),
             LuxtronikFlowOutStatusSensor(
-                luxtronik,
+                coordinator,
                 device_info_heating,
                 "calculations.ID_WEB_Sollwert_TRL_HZ",
                 "flow_out_temperature_target",
                 entity_category=None,
             ),
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info_heating,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitHz",
                 unique_id="operation_hours_heating",
@@ -538,7 +538,7 @@ async def async_setup_entry(
                 factor=SECOUND_TO_HOUR_FACTOR,
             ),
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info_heating,
                 sensor_key="calculations.ID_WEB_WMZ_Heizung",
                 unique_id="heat_amount_heating",
@@ -550,7 +550,7 @@ async def async_setup_entry(
             ),
         ]
         add_sensor_if_min_minor_version(luxtronik, entities, 88, LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info_heating,
             sensor_key="parameters.Unknown_Parameter_1136",
             unique_id="heat_energy_input",
@@ -563,7 +563,7 @@ async def async_setup_entry(
         )
 
     add_sensor_if_active(luxtronik, entities, "visibilities.ID_Visi_Temp_Rucklauf", LuxtronikSensor(
-        luxtronik,
+        coordinator,
         device_info_heating,
         "calculations.ID_WEB_Temperatur_TRL_ext",
         "flow_out_temperature_external",
@@ -576,7 +576,7 @@ async def async_setup_entry(
 
         entities += [
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info_domestic_water,
                 "calculations.ID_WEB_Temperatur_TBW",
                 "domestic_water_temperature",
@@ -584,7 +584,7 @@ async def async_setup_entry(
                 entity_category=None,
             ),
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info_domestic_water,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitBW",
                 unique_id="operation_hours_domestic_water",
@@ -596,7 +596,7 @@ async def async_setup_entry(
                 factor=SECOUND_TO_HOUR_FACTOR,
             ),
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 device_info_domestic_water,
                 sensor_key="calculations.ID_WEB_WMZ_Brauchwasser",
                 unique_id="heat_amount_domestic_water",
@@ -608,7 +608,7 @@ async def async_setup_entry(
             ),
         ]
         add_sensor_if_min_minor_version(luxtronik, entities, 88, LuxtronikSensor(
-            luxtronik,
+            coordinator,
             device_info_domestic_water,
             sensor_key="parameters.Unknown_Parameter_1137",
             unique_id="domestic_water_energy_input",
@@ -626,7 +626,7 @@ async def async_setup_entry(
             # if luxtronik.get_value("visibilities.ID_Visi_Temp_Solarkoll") > 0:
             entities += [
                 LuxtronikSensor(
-                    luxtronik,
+                    coordinator,
                     device_info_domestic_water,
                     "calculations.ID_WEB_Temperatur_TSK",
                     "solar_collector_temperature",
@@ -637,7 +637,7 @@ async def async_setup_entry(
         # if luxtronik.get_value("visibilities.ID_Visi_Temp_Solarsp") > 0:
             entities += [
                 LuxtronikSensor(
-                    luxtronik,
+                    coordinator,
                     device_info_domestic_water,
                     "calculations.ID_WEB_Temperatur_TSS",
                     "solar_buffer_temperature",
@@ -648,7 +648,7 @@ async def async_setup_entry(
         # if luxtronik.get_value("parameters.ID_BSTD_Solar") > 0:
             entities += [
                 LuxtronikSensor(
-                    luxtronik,
+                    coordinator,
                     device_info_domestic_water,
                     sensor_key="parameters.ID_BSTD_Solar",
                     unique_id="operation_hours_solar",
@@ -665,7 +665,7 @@ async def async_setup_entry(
     if deviceInfoCooling is not None:
         entities += [
             LuxtronikSensor(
-                luxtronik,
+                coordinator,
                 deviceInfoCooling,
                 sensor_key="calculations.ID_WEB_Zaehler_BetrZeitKue",
                 unique_id="operation_hours_cooling",
@@ -679,7 +679,7 @@ async def async_setup_entry(
         ]
 
     entities += _yaml_entities(
-        luxtronik, device_info, config_entry.options.get(CONF_SENSORS, [])
+        coordinator, device_info, config_entry.options.get(CONF_SENSORS, [])
     )
 
     async_add_entities(entities)
@@ -702,14 +702,14 @@ async def async_setup_entry(
 # endregion Setup
 
 
-class LuxtronikSensor(SensorEntity, RestoreEntity):
+class LuxtronikSensor(LuxtronikEntity, SensorEntity, RestoreEntity):
     """Representation of a Luxtronik Sensor."""
     _attr_is_on = True
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        luxtronik: LuxtronikDevice,
+        coordinator: LuxtronikCoordinator,
         device_info: DeviceInfo | ChildDeviceInfo,
         sensor_key: str,
         unique_id: str,
@@ -728,9 +728,9 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
         """Initialize the sensor."""
         # super().__init__(*args)
 #        super(LuxtronikSensor, self).__init__(*args)
-        self._luxtronik = luxtronik
+        super().__init__(coordinator)
 
-        self._attr_unique_id = f"{luxtronik.unique_id}_{unique_id}"
+        self._attr_unique_id = f"{self._luxtronik.unique_id}_{unique_id}"
         self._attr_translation_key = unique_id
         self._attr_device_class = device_class
         self._icon = icon
@@ -812,9 +812,9 @@ class LuxtronikSensor(SensorEntity, RestoreEntity):
         """Return true if sensor is on."""
         return self.native_value in LUX_STATES_ON
 
-    def update(self):
-        """Get the latest status and use it to update our sensor state."""
-        self._luxtronik.update()
+    @callback
+    def _update_attrs(self) -> None:
+        """Compute the attributes from the data read."""
         if self._sensor_key == "calculations.ID_WEB_HauptMenuStatus_Zeit":
             value = self.native_value
             if value is None:
@@ -851,9 +851,9 @@ class LuxtronikIndexStatusSensor(LuxtronikSensor):
             self._sensor_key = self._key_template.replace("%n", str(index))
             self._sensor_key_timestamp = self._key_timestamp_template.replace("%n", str(index))
 
-    def update(self):
-        """Get the latest status and use it to update our sensor state."""
-        self._luxtronik.update()
+    @callback
+    def _update_attrs(self) -> None:
+        """Follow the index to the current entry."""
         self._update_sensor_keys()
 
     @property
@@ -928,8 +928,10 @@ class LuxtronikStatusSensor(LuxtronikSensor, RestoreEntity):
     _second_evu_start_time: time = None
     _second_evu_end_time: time = None
 
-    def update(self):
-        LuxtronikSensor.update(self)
+    @callback
+    def _update_attrs(self) -> None:
+        """Track the start and end times of the EVU lock."""
+        LuxtronikSensor._update_attrs(self)
         time_now = time(datetime.now().hour, datetime.now().minute)
         if self.native_value is not None and self._last_state is not None and self.native_value == LUX_STATUS_EVU and self._last_state != LUX_STATUS_EVU:
             # evu start

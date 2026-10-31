@@ -13,7 +13,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType
 
-from . import LuxtronikDevice
+from .coordinator import LuxtronikCoordinator
+from .entity import LuxtronikEntity
 from .model import LuxtronikConfigEntry
 from .const import (CONF_CALCULATIONS, CONF_CONTROL_MODE_HOME_ASSISTANT,
                     CONF_HA_SENSOR_INDOOR_TEMPERATURE,
@@ -34,13 +35,11 @@ from .const import (CONF_CALCULATIONS, CONF_CONTROL_MODE_HOME_ASSISTANT,
                     LUX_STATUS_DOMESTIC_WATER,
                     LUX_STATUS_HEATING, LUX_STATUS_HEATING_EXTERNAL_SOURCE,
                     LUX_STATUS_SWIMMING_POOL_SOLAR,
-                    PRESET_SECOND_HEATSOURCE, SCAN_INTERVAL_DEVICE, LuxMode)
+                    PRESET_SECOND_HEATSOURCE, LuxMode)
 
 # endregion Imports
 
 # region Constants
-# Polling refreshes the state from the shared device data read by the other platforms.
-SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 SUPPORT_FLAGS: Final = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
 OPERATION_LIST: Final = [HVACMode.AUTO, HVACMode.OFF]
 
@@ -69,7 +68,7 @@ async def async_setup_entry(
     ha_sensor_indoor_temperature = settings.get(
         CONF_HA_SENSOR_INDOOR_TEMPERATURE)
 
-    luxtronik = config_entry.runtime_data.device
+    coordinator = config_entry.runtime_data.coordinator
 
     entities = []
 
@@ -77,7 +76,7 @@ async def async_setup_entry(
     if deviceInfoHeating is not None:
         entities += [
             LuxtronikHeatingThermostat(
-                luxtronik, deviceInfoHeating, control_mode_home_assistant=control_mode_home_assistant,
+                coordinator, deviceInfoHeating, control_mode_home_assistant=control_mode_home_assistant,
                 current_temperature_sensor=ha_sensor_indoor_temperature)
         ]
 
@@ -85,7 +84,7 @@ async def async_setup_entry(
     if deviceInfoDomesticWater is not None:
         entities += [
             LuxtronikDomesticWaterThermostat(
-                luxtronik, deviceInfoDomesticWater, control_mode_home_assistant=control_mode_home_assistant,
+                coordinator, deviceInfoDomesticWater, control_mode_home_assistant=control_mode_home_assistant,
                 current_temperature_sensor=LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE)
         ]
 
@@ -93,7 +92,7 @@ async def async_setup_entry(
     if deviceInfoCooling is not None:
         entities += [
             LuxtronikCoolingThermostat(
-                luxtronik, deviceInfoCooling, control_mode_home_assistant=control_mode_home_assistant,
+                coordinator, deviceInfoCooling, control_mode_home_assistant=control_mode_home_assistant,
                 current_temperature_sensor=LUX_SENSOR_OUTDOOR_TEMPERATURE)
         ]
 
@@ -101,7 +100,7 @@ async def async_setup_entry(
 # endregion Setup
 
 
-class LuxtronikThermostat(ClimateEntity, RestoreEntity):
+class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
     """Representation of a Luxtronik Thermostat device."""
     # region Properties / Init
     _attr_has_entity_name = True
@@ -134,10 +133,10 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
     _last_lux_mode: LuxMode = None
     _last_hvac_action = None
 
-    def __init__(self, luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo | ChildDeviceInfo, control_mode_home_assistant: bool, current_temperature_sensor: str):
-        self._luxtronik = luxtronik
+    def __init__(self, coordinator: LuxtronikCoordinator, deviceInfo: DeviceInfo | ChildDeviceInfo, control_mode_home_assistant: bool, current_temperature_sensor: str):
+        super().__init__(coordinator)
         self._attr_device_info = deviceInfo
-        self._attr_unique_id = f"{luxtronik.unique_id}_{self._key}"
+        self._attr_unique_id = f"{self._luxtronik.unique_id}_{self._key}"
         self._control_mode_home_assistant = control_mode_home_assistant
         self._current_temperature_sensor = current_temperature_sensor
     # endregion Properties / Init

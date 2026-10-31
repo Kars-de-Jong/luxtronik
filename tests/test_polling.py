@@ -1,4 +1,4 @@
-"""Test that every polling platform sets an explicit polling interval."""
+"""Test the polling intervals of the heatpump coordinator and the update platform."""
 from datetime import datetime, timedelta, timezone
 from importlib import import_module
 from unittest.mock import patch
@@ -11,16 +11,16 @@ HEATPUMP_PLATFORMS = ["sensor", "binary_sensor", "climate", "number", "switch"]
 
 
 @pytest.mark.parametrize("platform", HEATPUMP_PLATFORMS)
-def test_heatpump_platform_scan_interval(platform):
-    """The heatpump platforms poll the controller every 30 seconds."""
+def test_heatpump_platforms_do_not_poll(platform):
+    """The heatpump platforms don't poll; the coordinator reads the controller."""
     module = import_module(f"custom_components.luxtronik.{platform}")
-    assert module.SCAN_INTERVAL == timedelta(seconds=30)
+    assert not hasattr(module, "SCAN_INTERVAL")
 
 
-def test_device_throttle_is_shorter_than_scan_interval():
-    """Every scan cycle reads fresh data from the controller."""
-    from custom_components.luxtronik.const import MIN_TIME_BETWEEN_UPDATES, SCAN_INTERVAL_DEVICE
-    assert MIN_TIME_BETWEEN_UPDATES < SCAN_INTERVAL_DEVICE
+def test_coordinator_interval():
+    """The coordinator reads the controller every 30 seconds."""
+    from custom_components.luxtronik.const import SCAN_INTERVAL_DEVICE
+    assert SCAN_INTERVAL_DEVICE == timedelta(seconds=30)
 
 
 def test_update_platform_scan_interval():

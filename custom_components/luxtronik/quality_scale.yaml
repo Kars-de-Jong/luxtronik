@@ -5,7 +5,7 @@ rules:
   brands: done
   common-modules:
     status: done
-    comment: The integration has no coordinator or shared base entity.
+    comment: The coordinator is in coordinator.py and the shared base entity in entity.py.
   config-flow: done
   config-flow-test-coverage: done
   dependency-transparency: done
@@ -36,7 +36,7 @@ rules:
   docs-installation-parameters: todo
   entity-unavailable: todo
   integration-owner: todo
-  log-when-unavailable: todo
+  log-when-unavailable: done
   parallel-updates: todo
   reauthentication-flow:
     status: exempt

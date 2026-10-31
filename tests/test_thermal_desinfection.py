@@ -20,7 +20,7 @@ def _entity(hass, water_temperature):
     values = {TARGET_KEY: 650, LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE: water_temperature}
     luxtronik.get_value.side_effect = values.get
     entity = LuxtronikNumberThermalDesinfection(
-        luxtronik, None, number_key=TARGET_KEY, unique_id="thermal", factor=0.1)
+        MagicMock(device=luxtronik), None, number_key=TARGET_KEY, unique_id="thermal", factor=0.1)
     entity.hass = hass
     entity.entity_id = ENTITY_ID
     return entity, values
@@ -30,20 +30,20 @@ async def test_last_thermal_desinfection_updates_once_per_day(hass, freezer):
     """The first time the target is reached each day is stored."""
     entity, values = _entity(hass, 66.0)
     freezer.move_to("2026-10-01 10:00:00+00:00")
-    entity.update()
+    entity._update_attrs()
     first = entity.extra_state_attributes[LAST]
 
     freezer.tick(timedelta(hours=1))
-    entity.update()
+    entity._update_attrs()
     assert entity.extra_state_attributes[LAST] == first
 
     freezer.move_to("2026-10-02 10:00:00+00:00")
-    entity.update()
+    entity._update_attrs()
     assert entity.extra_state_attributes[LAST] == dt_util.now()
 
     values[LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE] = 50.0
     freezer.move_to("2026-10-03 10:00:00+00:00")
-    entity.update()
+    entity._update_attrs()
     assert entity.extra_state_attributes[LAST] == datetime.fromisoformat("2026-10-02 10:00:00+00:00")
 
 
@@ -56,9 +56,9 @@ async def test_last_thermal_desinfection_is_restored(hass, freezer):
     restored = entity.extra_state_attributes[LAST]
     assert restored == datetime.fromisoformat("2026-10-01 10:00:00+00:00")
 
-    entity.update()
+    entity._update_attrs()
     assert entity.extra_state_attributes[LAST] == restored
 
     freezer.move_to("2026-10-02 10:00:00+00:00")
-    entity.update()
+    entity._update_attrs()
     assert entity.extra_state_attributes[LAST] == dt_util.now()

@@ -6,7 +6,6 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from homeassistant.util import Throttle
 from luxtronik import Luxtronik as Lux
 
 from .const import (
@@ -17,7 +16,6 @@ from .const import (
     LUX_DETECT_SOLAR_SENSOR,
     LUX_MK_SENSORS,
     LuxMkTypes,
-    MIN_TIME_BETWEEN_UPDATES,
 )
 from .helpers.debounce import debounce
 from .helpers.lux_helper import get_manufacturer_by_model
@@ -27,7 +25,6 @@ from .helpers.lux_helper import get_manufacturer_by_model
 
 class LuxtronikDevice:
     """Handle all communication with Luxtronik."""
-    __ignore_update = False
 
     def __init__(self, host: str, port: int, safe: bool, lock_timeout_sec: int) -> None:
         """Initialize the Luxtronik connection."""
@@ -36,8 +33,8 @@ class LuxtronikDevice:
         self._host = host
         self._port = port
         self._lock_timeout_sec = lock_timeout_sec
+        # The library client reads the heatpump when it is created.
         self._luxtronik = Lux(host, port, safe)
-        self.update()
 
     @staticmethod
     def connect(host: str, port: int):
@@ -184,7 +181,6 @@ class LuxtronikDevice:
         self, parameter, value, use_debounce=True, update_immediately_after_write=False
     ):
         """Write a parameter to the Luxtronik heatpump."""
-        self.__ignore_update = True
         if use_debounce:
             self.__write_debounced(parameter, value, update_immediately_after_write)
         else:
@@ -227,7 +223,6 @@ class LuxtronikDevice:
             if update_immediately_after_write:
                 time.sleep(3)
                 self.read()
-            self.__ignore_update = False
             LOGGER.info(
                 'LuxtronikDevice.write finished %s value: "%s" - %s',
                 parameter,
@@ -235,20 +230,14 @@ class LuxtronikDevice:
                 update_immediately_after_write,
             )
 
-    @Throttle(MIN_TIME_BETWEEN_UPDATES)
-    def update(self):
-        """Update sensor values."""
-        if self.__ignore_update:
-            return
-        self.read()
-
     def read(self):
-        """Get the data from Luxtronik."""
+        """Get the data from Luxtronik.
+
+        Raises TimeoutError when the lock can't be acquired within the lock timeout.
+        """
         with self._acquire_lock() as acquired:
-            if acquired:
-                self._luxtronik.read()
-            else:
-                LOGGER.warning(
-                    "Couldn't read luxtronik data because of lock timeout %s",
-                    self._lock_timeout_sec,
+            if not acquired:
+                raise TimeoutError(
+                    f"Couldn't read luxtronik data because of lock timeout {self._lock_timeout_sec}"
                 )
+            self._luxtronik.read()

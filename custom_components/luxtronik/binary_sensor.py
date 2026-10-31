@@ -24,17 +24,16 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
                     LUX_BINARY_SENSOR_CIRCULATION_PUMP_HEATING,
                     LUX_BINARY_SENSOR_DOMESTIC_WATER_RECIRCULATION_PUMP,
                     LUX_BINARY_SENSOR_EVU_UNLOCKED,
-                    LUX_BINARY_SENSOR_SOLAR_PUMP, SCAN_INTERVAL_DEVICE,
+                    LUX_BINARY_SENSOR_SOLAR_PUMP,
                     YAML_BINARY_SENSOR_SCHEMA)
 from .helpers.helper import get_yaml_unique_id
-from .luxtronik_device import LuxtronikDevice
+from .coordinator import LuxtronikCoordinator
+from .entity import LuxtronikEntity
 from .model import LuxtronikConfigEntry
 
 # endregion Imports
 
 # region Constants
-# The device read is throttled, so all entities share one controller read.
-SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_SENSORS): vol.All(cv.ensure_list, [YAML_BINARY_SENSOR_SCHEMA])
@@ -61,18 +60,18 @@ async def async_setup_platform(
 
 
 def _yaml_entities(
-    luxtronik: LuxtronikDevice, deviceInfo: DeviceInfo, sensors: list[dict[str, Any]]
+    coordinator: LuxtronikCoordinator, deviceInfo: DeviceInfo, sensors: list[dict[str, Any]]
 ) -> list["LuxtronikBinarySensor"]:
     """Create the binary sensors configured in YAML."""
     entities = []
     for sensor_cfg in sensors:
         group, sensor_id = sensor_cfg[CONF_ID].split(".", 1)
-        sensor = luxtronik.get_sensor(group, sensor_id)
+        sensor = coordinator.device.get_sensor(group, sensor_id)
         if not sensor:
             LOGGER.warning("Invalid Luxtronik ID %s in group %s", sensor_id, group)
             continue
         entity = LuxtronikBinarySensor(
-            luxtronik,
+            coordinator,
             deviceInfo=deviceInfo,
             sensor_key=sensor_cfg[CONF_ID],
             unique_id=sensor_id,
@@ -101,13 +100,14 @@ async def async_setup_entry(
     LOGGER.info(
         f"{DOMAIN}.binary_sensor.async_setup_entry ConfigType: %s", config_entry
     )
-    luxtronik = config_entry.runtime_data.device
+    coordinator = config_entry.runtime_data.coordinator
+    luxtronik = coordinator.device
 
     deviceInfo = config_entry.runtime_data.device_info
 
     entities = [
         LuxtronikBinarySensor(
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             deviceInfo=deviceInfo,
             sensor_key=LUX_BINARY_SENSOR_EVU_UNLOCKED,
             unique_id="evu_unlocked",
@@ -115,7 +115,7 @@ async def async_setup_entry(
             device_class=BinarySensorDeviceClass.LOCK,
         ),
         LuxtronikBinarySensor(
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             deviceInfo=deviceInfo,
             sensor_key='calculations.ID_WEB_VD1out',
             unique_id="compressor",
@@ -125,7 +125,7 @@ async def async_setup_entry(
         # Soleumwälzpumpe
         # Umwälzpumpe Ventilator, Brunnen- oder Sole
         LuxtronikBinarySensor(
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             deviceInfo=deviceInfo,
             sensor_key='calculations.ID_WEB_VBOout',
             unique_id="pump_flow",
@@ -133,7 +133,7 @@ async def async_setup_entry(
             device_class=BinarySensorDeviceClass.RUNNING,
         ),
         LuxtronikBinarySensor(
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             deviceInfo=deviceInfo,
             sensor_key='calculations.ID_WEB_LIN_VDH_out',
             unique_id="compressor_heater",
@@ -141,7 +141,7 @@ async def async_setup_entry(
             device_class=BinarySensorDeviceClass.RUNNING,
         ),
         LuxtronikBinarySensor(
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             deviceInfo=deviceInfo,
             sensor_key='calculations.ID_WEB_AVout',
             unique_id="defrost_valve",
@@ -150,7 +150,7 @@ async def async_setup_entry(
             device_class=BinarySensorDeviceClass.OPENING,
         ),
         LuxtronikBinarySensor(
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             deviceInfo=deviceInfo,
             sensor_key='calculations.ID_WEB_ZW1out',
             unique_id="additional_heat_generator",
@@ -158,7 +158,7 @@ async def async_setup_entry(
             device_class=BinarySensorDeviceClass.RUNNING,
         ),
         LuxtronikBinarySensor(
-            luxtronik=luxtronik,
+            coordinator=coordinator,
             deviceInfo=deviceInfo,
             sensor_key='calculations.ID_WEB_ZW2SSTout',
             unique_id="disturbance_output",
@@ -180,7 +180,7 @@ async def async_setup_entry(
     if deviceInfoHeating is not None:
         entities += [
             LuxtronikBinarySensor(
-                luxtronik=luxtronik,
+                coordinator=coordinator,
                 deviceInfo=deviceInfoHeating,
                 sensor_key=LUX_BINARY_SENSOR_CIRCULATION_PUMP_HEATING,
                 unique_id="circulation_pump_heating",
@@ -188,7 +188,7 @@ async def async_setup_entry(
                 device_class=BinarySensorDeviceClass.RUNNING,
             ),
             LuxtronikBinarySensor(
-                luxtronik=luxtronik,
+                coordinator=coordinator,
                 deviceInfo=deviceInfoHeating,
                 sensor_key=LUX_BINARY_SENSOR_ADDITIONAL_CIRCULATION_PUMP,
                 unique_id="additional_circulation_pump",
@@ -205,7 +205,7 @@ async def async_setup_entry(
             circulation_pump_unique_id = 'domestic_water_charging_pump'
         entities += [
             LuxtronikBinarySensor(
-                luxtronik=luxtronik,
+                coordinator=coordinator,
                 deviceInfo=deviceInfoDomesticWater,
                 sensor_key=LUX_BINARY_SENSOR_DOMESTIC_WATER_RECIRCULATION_PUMP,
                 unique_id="domestic_water_recirculation_pump",
@@ -213,7 +213,7 @@ async def async_setup_entry(
                 device_class=BinarySensorDeviceClass.RUNNING,
             ),
             LuxtronikBinarySensor(
-                luxtronik=luxtronik,
+                coordinator=coordinator,
                 deviceInfo=deviceInfoDomesticWater,
                 sensor_key='calculations.ID_WEB_ZIPout',
                 unique_id=circulation_pump_unique_id,
@@ -225,7 +225,7 @@ async def async_setup_entry(
         if solar_present:
             entities += [
                 LuxtronikBinarySensor(
-                    luxtronik=luxtronik,
+                    coordinator=coordinator,
                     deviceInfo=deviceInfoDomesticWater,
                     sensor_key=LUX_BINARY_SENSOR_SOLAR_PUMP,
                     unique_id="solar_pump",
@@ -238,7 +238,7 @@ async def async_setup_entry(
     if deviceInfoCooling is not None:
         entities += [
             LuxtronikBinarySensor(
-                luxtronik=luxtronik,
+                coordinator=coordinator,
                 deviceInfo=deviceInfoCooling,
                 sensor_key="calculations.ID_WEB_FreigabKuehl",
                 unique_id="approval_cooling",
@@ -248,14 +248,14 @@ async def async_setup_entry(
         ]
 
     entities += _yaml_entities(
-        luxtronik, deviceInfo, config_entry.options.get(CONF_BINARY_SENSORS, [])
+        coordinator, deviceInfo, config_entry.options.get(CONF_BINARY_SENSORS, [])
     )
 
     async_add_entities(entities)
 # endregion Setup
 
 
-class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
+class LuxtronikBinarySensor(LuxtronikEntity, BinarySensorEntity, RestoreEntity):
     """Representation of a Luxtronik binary sensor."""
 
     _on_state: str = True
@@ -263,7 +263,7 @@ class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
 
     def __init__(
         self,
-        luxtronik: LuxtronikDevice,
+        coordinator: LuxtronikCoordinator,
         deviceInfo: DeviceInfo | ChildDeviceInfo,
         sensor_key: str,
         unique_id: str,
@@ -279,10 +279,10 @@ class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
         """Initialize a new Luxtronik binary sensor."""
         # super().__init__(*args)
         # self.hass = hass
-        self._luxtronik = luxtronik
+        super().__init__(coordinator)
 
         self._sensor_key = sensor_key
-        self._attr_unique_id = f"{luxtronik.unique_id}_{unique_id}"
+        self._attr_unique_id = f"{self._luxtronik.unique_id}_{unique_id}"
         self._attr_translation_key = unique_id
         self._attr_device_info = deviceInfo
         self._attr_icon = icon
@@ -307,7 +307,3 @@ class LuxtronikBinarySensor(BinarySensorEntity, RestoreEntity):
         if self._attr_icon is None:
             super().icon
         return self._attr_icon
-
-    def update(self):
-        """Get the latest status and use it to update our sensor state."""
-        self._luxtronik.update()

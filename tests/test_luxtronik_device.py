@@ -1,7 +1,7 @@
 """Test the communication with the heatpump."""
 import logging
 import threading
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -18,16 +18,29 @@ def device():
     return device
 
 
-def test_read_lock_timeout(device, caplog):
-    """A read that can't get the lock logs a warning and doesn't release the lock of another."""
+def test_read_lock_timeout(device):
+    """A read that can't get the lock fails and doesn't release the lock of another."""
     device.lock.acquire()
-    with caplog.at_level(logging.WARNING):
+    with pytest.raises(TimeoutError, match="lock timeout"):
         device.read()
 
     device._luxtronik.read.assert_not_called()
-    assert "lock timeout" in caplog.text
     assert device.lock.locked()
     device.lock.release()
+
+
+def test_connect_reads_once():
+    """Creating the device reads the heatpump once, in the library client."""
+    with patch("custom_components.luxtronik.luxtronik_device.Lux") as lux:
+        LuxtronikDevice("10.0.0.2", 8889, True, 30)
+
+    lux.assert_called_once_with("10.0.0.2", 8889, True)
+    lux.return_value.read.assert_not_called()
+
+
+def test_device_has_no_throttled_update():
+    """The coordinator reads the heatpump, so the device has no throttled update."""
+    assert not hasattr(LuxtronikDevice, "update")
 
 
 def test_write_lock_timeout(device, caplog):

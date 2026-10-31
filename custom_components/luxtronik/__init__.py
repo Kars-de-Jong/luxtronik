@@ -36,6 +36,7 @@ from .const import (
 )
 from .const import CONFIG_SCHEMA  # noqa: F401
 from .helpers.helper import get_sensor_text, get_yaml_unique_id, load_texts
+from .coordinator import LuxtronikCoordinator
 from .luxtronik_device import LuxtronikDevice
 from .model import LuxtronikConfigEntry, LuxtronikRuntimeData
 
@@ -77,8 +78,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEn
         ) from err
 
     await hass.async_add_executor_job(load_texts, hass.config.language)
+    # The device was read when it connected, so there is no first refresh.
+    coordinator = LuxtronikCoordinator(hass, config_entry, luxtronik)
     config_entry.runtime_data = build_runtime_data(
-        hass, config_entry, luxtronik, cooling_present
+        hass, config_entry, coordinator, cooling_present
     )
 
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
@@ -195,16 +198,16 @@ def connect_luxtronik(data) -> tuple[LuxtronikDevice, bool]:
     #             use_legacy_sensor_ids)
 
     luxtronik = LuxtronikDevice(host, port, safe, lock_timeout)
-    luxtronik.read()
 
     return luxtronik, luxtronik.detect_cooling_present()
 
 
 def build_runtime_data(
     hass: HomeAssistant, config_entry: LuxtronikConfigEntry,
-    luxtronik: LuxtronikDevice, cooling_present: bool
+    coordinator: LuxtronikCoordinator, cooling_present: bool
 ) -> LuxtronikRuntimeData:
     """Register the heatpump device and build the runtime data."""
+    luxtronik = coordinator.device
     # Build Sensor names with local language:
     lang = hass.config.language
     text_domestic_water = get_sensor_text(lang, "domestic_water")
@@ -238,6 +241,7 @@ def build_runtime_data(
     )
     return LuxtronikRuntimeData(
         device=luxtronik,
+        coordinator=coordinator,
         device_info=device_info,
         device_info_domestic_water=device_info_domestic_water,
         device_info_heating=device_info_heating,

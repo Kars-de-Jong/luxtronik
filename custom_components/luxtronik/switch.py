@@ -9,19 +9,18 @@ from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from . import LuxtronikDevice
+from .coordinator import LuxtronikCoordinator
+from .entity import LuxtronikEntity
 from .model import LuxtronikConfigEntry
 from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, LOGGER,
                     LUX_SENSOR_EFFICIENCY_PUMP, LUX_SENSOR_HEATING_THRESHOLD,
                     LUX_SENSOR_MODE_COOLING, LUX_SENSOR_MODE_DOMESTIC_WATER,
                     LUX_SENSOR_MODE_HEATING, LUX_SENSOR_PUMP_OPTIMIZATION,
-                    LUX_SENSOR_REMOTE_MAINTENANCE, SCAN_INTERVAL_DEVICE, LuxMode)
+                    LUX_SENSOR_REMOTE_MAINTENANCE, LuxMode)
 
 # endregion Imports
 
 # region Constants
-# The device read is throttled, so all entities share one controller read.
-SCAN_INTERVAL = SCAN_INTERVAL_DEVICE
 # endregion Constants
 
 # region Setup
@@ -35,20 +34,20 @@ async def async_setup_entry(
     """Set up a Luxtronik sensor from ConfigEntry."""
     LOGGER.info(
         "luxtronik2.switch.async_setup_entry ConfigType: %s", config_entry)
-    luxtronik = config_entry.runtime_data.device
+    coordinator = config_entry.runtime_data.coordinator
 
     entities = []
 
     device_info = config_entry.runtime_data.device_info
     entities += [
         LuxtronikSwitch(
-            hass=hass, luxtronik=luxtronik, device_info=device_info,
+            hass=hass, coordinator=coordinator, device_info=device_info,
             sensor_key=LUX_SENSOR_REMOTE_MAINTENANCE, unique_id='remote_maintenance', icon='mdi:remote-desktop', entity_category=EntityCategory.CONFIG),
         LuxtronikSwitch(
-            hass=hass, luxtronik=luxtronik, device_info=device_info,
+            hass=hass, coordinator=coordinator, device_info=device_info,
             sensor_key=LUX_SENSOR_EFFICIENCY_PUMP, unique_id='efficiency_pump', icon='mdi:leaf-circle', entity_category=EntityCategory.CONFIG),
         LuxtronikSwitch(
-            hass=hass, luxtronik=luxtronik, device_info=device_info,
+            hass=hass, coordinator=coordinator, device_info=device_info,
             sensor_key='parameters.ID_Einst_P155_PumpHeatCtrl', unique_id='pump_heat_control', icon='mdi:pump', entity_category=EntityCategory.CONFIG,
             entity_registry_enabled_default=False),
     ]
@@ -57,14 +56,14 @@ async def async_setup_entry(
     if deviceInfoHeating is not None:
         entities += [
             LuxtronikSwitch(
-                hass=hass, luxtronik=luxtronik, device_info=deviceInfoHeating,
+                hass=hass, coordinator=coordinator, device_info=deviceInfoHeating,
                 sensor_key=LUX_SENSOR_PUMP_OPTIMIZATION, unique_id='pump_optimization', icon='mdi:tune', entity_category=EntityCategory.CONFIG),
             LuxtronikSwitch(
                 on_state=LuxMode.automatic.value, off_state=LuxMode.off.value,
-                hass=hass, luxtronik=luxtronik, device_info=deviceInfoHeating,
+                hass=hass, coordinator=coordinator, device_info=deviceInfoHeating,
                 sensor_key=LUX_SENSOR_MODE_HEATING, unique_id='heating', icon='mdi:radiator', icon_off='mdi:radiator-off'),
             LuxtronikSwitch(
-                hass=hass, luxtronik=luxtronik, device_info=deviceInfoHeating,
+                hass=hass, coordinator=coordinator, device_info=deviceInfoHeating,
                 sensor_key=LUX_SENSOR_HEATING_THRESHOLD, unique_id='heating_threshold', icon='mdi:download-outline', entity_category=EntityCategory.CONFIG)
         ]
 
@@ -73,7 +72,7 @@ async def async_setup_entry(
         entities += [
             LuxtronikSwitch(
                 on_state=LuxMode.automatic.value, off_state=LuxMode.off.value,
-                hass=hass, luxtronik=luxtronik,
+                hass=hass, coordinator=coordinator,
                 device_info=deviceInfoDomesticWater,
                 sensor_key=LUX_SENSOR_MODE_DOMESTIC_WATER,
                 unique_id='domestic_water', icon='mdi:water-boiler-auto', icon_off='mdi:water-boiler-off'),
@@ -84,7 +83,7 @@ async def async_setup_entry(
         entities += [
             LuxtronikSwitch(
                 on_state=LuxMode.automatic.value, off_state=LuxMode.off.value,
-                hass=hass, luxtronik=luxtronik,
+                hass=hass, coordinator=coordinator,
                 device_info=deviceInfoCooling,
                 sensor_key=LUX_SENSOR_MODE_COOLING,
                 unique_id='cooling', icon='mdi:snowflake')
@@ -94,14 +93,14 @@ async def async_setup_entry(
 # endregion Setup
 
 
-class LuxtronikSwitch(SwitchEntity, RestoreEntity):
+class LuxtronikSwitch(LuxtronikEntity, SwitchEntity, RestoreEntity):
     """Representation of a Luxtronik switch."""
 
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        luxtronik: LuxtronikDevice,
+        coordinator: LuxtronikCoordinator,
         device_info: DeviceInfo | ChildDeviceInfo,
         sensor_key: str,
         unique_id: str,
@@ -114,9 +113,9 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         **kwargs: Any,
     ) -> None:
         """Initialize a new Luxtronik switch."""
-        self._luxtronik = luxtronik
+        super().__init__(coordinator)
         self._sensor_key = sensor_key
-        self._attr_unique_id = f"{luxtronik.unique_id}_{unique_id}"
+        self._attr_unique_id = f"{self._luxtronik.unique_id}_{unique_id}"
         self._attr_translation_key = unique_id
         self._attr_device_info = device_info
         self._attr_icon = icon
@@ -154,7 +153,3 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         if self._attr_icon is None:
             super().icon
         return self._attr_icon
-
-    def update(self):
-        """Get the latest status and use it to update our sensor state."""
-        self._luxtronik.update()

@@ -6,6 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo
 
+from .coordinator import LuxtronikCoordinator
 from .luxtronik_device import LuxtronikDevice
 
 
@@ -19,6 +20,7 @@ class LuxtronikRuntimeData:
     """Runtime data of a Luxtronik config entry."""
 
     device: LuxtronikDevice
+    coordinator: LuxtronikCoordinator
     device_info: DeviceInfo
     device_info_domestic_water: ChildDeviceInfo
     device_info_heating: ChildDeviceInfo
