@@ -2,7 +2,6 @@
 # region Imports
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo
@@ -44,16 +43,13 @@ async def async_setup_entry(
     entities += [
         LuxtronikSwitch(
             hass=hass, luxtronik=luxtronik, device_info=device_info,
-            sensor_key=LUX_SENSOR_REMOTE_MAINTENANCE, unique_id='remote_maintenance', icon='mdi:remote-desktop',
-            device_class=BinarySensorDeviceClass.HEAT, entity_category=EntityCategory.CONFIG),
+            sensor_key=LUX_SENSOR_REMOTE_MAINTENANCE, unique_id='remote_maintenance', icon='mdi:remote-desktop', entity_category=EntityCategory.CONFIG),
         LuxtronikSwitch(
             hass=hass, luxtronik=luxtronik, device_info=device_info,
-            sensor_key=LUX_SENSOR_EFFICIENCY_PUMP, unique_id='efficiency_pump', icon='mdi:leaf-circle',
-            device_class=BinarySensorDeviceClass.HEAT, entity_category=EntityCategory.CONFIG),
+            sensor_key=LUX_SENSOR_EFFICIENCY_PUMP, unique_id='efficiency_pump', icon='mdi:leaf-circle', entity_category=EntityCategory.CONFIG),
         LuxtronikSwitch(
             hass=hass, luxtronik=luxtronik, device_info=device_info,
-            sensor_key='parameters.ID_Einst_P155_PumpHeatCtrl', unique_id='pump_heat_control', icon='mdi:pump',
-            device_class=BinarySensorDeviceClass.HEAT, entity_category=EntityCategory.CONFIG,
+            sensor_key='parameters.ID_Einst_P155_PumpHeatCtrl', unique_id='pump_heat_control', icon='mdi:pump', entity_category=EntityCategory.CONFIG,
             entity_registry_enabled_default=False),
     ]
 
@@ -62,17 +58,14 @@ async def async_setup_entry(
         entities += [
             LuxtronikSwitch(
                 hass=hass, luxtronik=luxtronik, device_info=deviceInfoHeating,
-                sensor_key=LUX_SENSOR_PUMP_OPTIMIZATION, unique_id='pump_optimization', icon='mdi:tune',
-                device_class=BinarySensorDeviceClass.HEAT, entity_category=EntityCategory.CONFIG),
+                sensor_key=LUX_SENSOR_PUMP_OPTIMIZATION, unique_id='pump_optimization', icon='mdi:tune', entity_category=EntityCategory.CONFIG),
             LuxtronikSwitch(
                 on_state=LuxMode.automatic.value, off_state=LuxMode.off.value,
                 hass=hass, luxtronik=luxtronik, device_info=deviceInfoHeating,
-                sensor_key=LUX_SENSOR_MODE_HEATING, unique_id='heating', icon='mdi:radiator', icon_off='mdi:radiator-off',
-                device_class=BinarySensorDeviceClass.HEAT),
+                sensor_key=LUX_SENSOR_MODE_HEATING, unique_id='heating', icon='mdi:radiator', icon_off='mdi:radiator-off'),
             LuxtronikSwitch(
                 hass=hass, luxtronik=luxtronik, device_info=deviceInfoHeating,
-                sensor_key=LUX_SENSOR_HEATING_THRESHOLD, unique_id='heating_threshold', icon='mdi:download-outline',
-                device_class=BinarySensorDeviceClass.HEAT, entity_category=EntityCategory.CONFIG)
+                sensor_key=LUX_SENSOR_HEATING_THRESHOLD, unique_id='heating_threshold', icon='mdi:download-outline', entity_category=EntityCategory.CONFIG)
         ]
 
     deviceInfoDomesticWater = config_entry.runtime_data.device_info_domestic_water
@@ -83,8 +76,7 @@ async def async_setup_entry(
                 hass=hass, luxtronik=luxtronik,
                 device_info=deviceInfoDomesticWater,
                 sensor_key=LUX_SENSOR_MODE_DOMESTIC_WATER,
-                unique_id='domestic_water', icon='mdi:water-boiler-auto', icon_off='mdi:water-boiler-off',
-                device_class=BinarySensorDeviceClass.HEAT),
+                unique_id='domestic_water', icon='mdi:water-boiler-auto', icon_off='mdi:water-boiler-off'),
         ]
 
     deviceInfoCooling = config_entry.runtime_data.device_info_cooling
@@ -95,8 +87,7 @@ async def async_setup_entry(
                 hass=hass, luxtronik=luxtronik,
                 device_info=deviceInfoCooling,
                 sensor_key=LUX_SENSOR_MODE_COOLING,
-                unique_id='cooling', icon='mdi:snowflake',
-                device_class=BinarySensorDeviceClass.HEAT)
+                unique_id='cooling', icon='mdi:snowflake')
         ]
 
     async_add_entities(entities)
@@ -115,7 +106,6 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         sensor_key: str,
         unique_id: str,
         icon: str,
-        device_class: str,
         entity_category: EntityCategory = None,
         icon_off: str = None,
         on_state: str = True,
@@ -131,7 +121,6 @@ class LuxtronikSwitch(SwitchEntity, RestoreEntity):
         self._attr_device_info = device_info
         self._attr_icon = icon
         self._icon_off = icon_off
-        self._attr_device_class = device_class
         self._attr_entity_category = entity_category
         self._on_state = on_state
         self._off_state = off_state

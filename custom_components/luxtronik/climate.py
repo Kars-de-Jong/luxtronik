@@ -19,7 +19,7 @@ from .model import LuxtronikConfigEntry
 from .const import (CONF_CALCULATIONS, CONF_CONTROL_MODE_HOME_ASSISTANT,
                     CONF_HA_SENSOR_INDOOR_TEMPERATURE,
                     CONF_PARAMETERS,
-                    CONF_VISIBILITIES, DEFAULT_TOLERANCE, DOMAIN, LOGGER,
+                    CONF_VISIBILITIES, DEFAULT_TOLERANCE, LOGGER,
                     LUX_BINARY_SENSOR_DOMESTIC_WATER_RECIRCULATION_PUMP,
                     LUX_BINARY_SENSOR_CIRCULATION_PUMP_HEATING,
                     LUX_SENSOR_COOLING_THRESHOLD,
@@ -326,7 +326,6 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
 
 class LuxtronikDomesticWaterThermostat(LuxtronikThermostat):
     _key: Final = 'domestic_water'
-    _attr_device_class: Final = f"{DOMAIN}__{_key}"
 
     _attr_target_temperature_step = 1.0
     _attr_min_temp = 40.0
@@ -352,7 +351,6 @@ class LuxtronikDomesticWaterThermostat(LuxtronikThermostat):
 
 class LuxtronikHeatingThermostat(LuxtronikThermostat):
     _key: Final = 'heating'
-    _attr_device_class: Final = f"{DOMAIN}__{_key}"
 
     # _attr_target_temperature = 20.5
     _attr_target_temperature_step = 0.1
@@ -377,7 +375,6 @@ class LuxtronikHeatingThermostat(LuxtronikThermostat):
 class LuxtronikCoolingThermostat(LuxtronikThermostat):
     _key: Final = 'cooling'
     _attr_icon = 'mdi:snowflake'
-    _attr_device_class: Final = f"{DOMAIN}__{_key}"
 
     _target_temperature_sensor = LUX_SENSOR_COOLING_THRESHOLD
     _attr_target_temperature_step = 0.5

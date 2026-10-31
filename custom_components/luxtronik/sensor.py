@@ -228,7 +228,7 @@ async def async_setup_entry(
             icon="mdi:pulse",
             device_class=None,
             state_class=SensorStateClass.TOTAL_INCREASING,
-            unit_of_measurement="Anzahl",
+            unit_of_measurement=None,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
         LuxtronikSensor(
