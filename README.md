@@ -268,7 +268,8 @@ Things to know:
 - If you have set up more than one heatpump, choose one with `config_entry_id`. Without it, the action writes to the first loaded heatpump, and fails with the error "No Luxtronik heatpump is loaded." if there is none. The action also fails if the chosen heatpump doesn't exist or isn't loaded.
 - Writes are delayed by 3 seconds. If the action is called again for the same parameter within those 3 seconds, only the last value is written. Writes to different parameters don't affect each other.
 - If **Update immediately after writing** is enabled for the heatpump (the default), all values are read again 3 seconds after the write, so the change shows up without waiting for the next update.
-- The action returns as soon as the write has been scheduled. An unknown parameter ID is not reported as an error; it is only logged as a warning in the Home Assistant log and nothing is written.
+- The action fails if the heatpump has no parameter with the given ID or index. Parameter index 0 (`ID_Transfert_LuxNet`) can't be written, because the library skips it.
+- The action returns as soon as the write has been scheduled.
 
 #### Parameters with a known function
 

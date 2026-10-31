@@ -103,8 +103,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def write_parameter(service: ServiceCall) -> None:
         """Write a parameter to the Luxtronik heatpump."""
         config_entry = _async_get_write_config_entry(hass, service.data.get(ATTR_CONFIG_ENTRY_ID))
-        parameter = service.data.get(ATTR_PARAMETER)
-        value = service.data.get(ATTR_VALUE)
+        parameter = service.data[ATTR_PARAMETER]
+        value = service.data[ATTR_VALUE]
+        if not config_entry.runtime_data.device.has_parameter(parameter):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="unknown_parameter",
+                translation_placeholders={"parameter": parameter},
+            )
         update_immediately_after_write = config_entry.data.get(
             CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, True
         )

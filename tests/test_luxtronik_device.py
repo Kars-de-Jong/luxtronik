@@ -85,3 +85,20 @@ def test_write_unknown_parameter_stores_nothing(device):
 
     device._luxtronik.write.assert_not_called()
 
+
+
+@pytest.mark.parametrize(("parameter", "known"), [
+    ("ID_Ba_Hz_akt", True),
+    ("3", True),
+    ("ID_Does_Not_Exist", False),
+    ("5000", False),
+    ("-1", False),
+    # The library can't write the parameter with index 0.
+    ("0", False),
+    ("ID_Transfert_LuxNet", False),
+])
+def test_has_parameter(device, parameter, known):
+    """A parameter is known by its name or its index, except the one with index 0."""
+    device._luxtronik.parameters = Parameters(safe=False)
+
+    assert device.has_parameter(parameter) is known

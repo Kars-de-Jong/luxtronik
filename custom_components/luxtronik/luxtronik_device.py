@@ -175,6 +175,26 @@ class LuxtronikDevice:
         LOGGER.debug(f"cooling_target_temperature_sensor = '{cooling_target_temperature_sensor}' ")
         return cooling_target_temperature_sensor
 
+    def has_parameter(self, parameter: str) -> bool:
+        """Return whether a parameter, given by its name or index, can be written."""
+        return self._find_parameter(parameter) is not None
+
+    def _find_parameter(self, parameter: str):
+        """Find a parameter by its name or index, like the library does.
+
+        The library skips the parameter with index 0 when it writes (`if index:` in
+        `Parameters.set`), so it is not found here either.
+        """
+        parameters = self._luxtronik.parameters.parameters
+        try:
+            index = int(parameter)
+        except ValueError:
+            index = next(
+                (index for index, found in parameters.items() if found.name == parameter), None)
+        if not index:
+            return None
+        return parameters.get(index)
+
     @contextmanager
     def _acquire_lock(self) -> Iterator[bool]:
         """Acquire the lock within the timeout, and release it only when it was acquired."""

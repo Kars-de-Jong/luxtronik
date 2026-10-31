@@ -537,6 +537,9 @@
   "exceptions": {
     "no_loaded_entry": {
       "message": "Es ist keine Luxtronik-Wärmepumpe geladen."
+    },
+    "unknown_parameter": {
+      "message": "Die Wärmepumpe hat keinen schreibbaren Parameter {parameter}."
     }
   }
 }

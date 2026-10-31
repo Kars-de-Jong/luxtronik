@@ -313,3 +313,18 @@ async def test_write_action_without_loaded_heatpump(hass, luxtronik, values):
 
     assert err.value.translation_domain == DOMAIN
     assert err.value.translation_key == "no_loaded_entry"
+
+
+async def test_write_action_unknown_parameter(hass, luxtronik, values):
+    """The write action fails for an unknown parameter and writes nothing."""
+    await _setup(hass)
+    luxtronik.has_parameter.side_effect = lambda parameter: parameter != "ID_Does_Not_Exist"
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _write_action(hass, "ID_Does_Not_Exist", "1")
+
+    assert err.value.translation_domain == DOMAIN
+    assert err.value.translation_key == "unknown_parameter"
+    assert err.value.translation_placeholders == {"parameter": "ID_Does_Not_Exist"}
+    await _wait(hass, 3)
+    assert luxtronik.writes == []
