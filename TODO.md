@@ -8,7 +8,6 @@ Conventions from the Bronze work:
 - **One commit per fix.**
 - **Write the failing test first.** Run tests with `.venv/bin/pytest` and lint with `.venv/bin/flake8 . --count --select=E9,F63,F7,F82 --exclude=.venv`.
 - **Use the shared test fixtures.** `tests/conftest.py` has a `luxtronik` fixture: a MagicMock device patched over `custom_components.luxtronik.LuxtronikDevice`.
-- **No `Co-Authored-By` lines** in commits.
 - **Update `quality_scale.yaml`** when a fix completes a quality scale rule.
 - **Validate with hassfest** after changes to `manifest.json`, `strings.json`, `translations/`, `services.yaml` or `quality_scale.yaml`: `docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest` from the repository root. This is the image the `home-assistant/actions/hassfest` GitHub Action uses. It currently reports the errors listed in item 13; a fix must not add new ones.
 
