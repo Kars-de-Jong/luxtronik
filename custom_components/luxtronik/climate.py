@@ -7,7 +7,7 @@ from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import HVACAction, HVACMode, PRESET_AWAY, PRESET_BOOST, PRESET_NONE
 from homeassistant.components.water_heater import ATTR_TEMPERATURE
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -153,12 +153,8 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
             self._attr_current_temperature = self._luxtronik.get_value(
                 self._current_temperature_sensor)
         else:
-            current_temperature_sensor = self.hass.states.get(
+            self._attr_current_temperature = self.__get_state_temperature(
                 self._current_temperature_sensor)
-            if current_temperature_sensor is None or current_temperature_sensor.state is None or current_temperature_sensor.state == 'unknown':
-                self._attr_current_temperature = None
-            else:
-                self._attr_current_temperature = float(current_temperature_sensor.state)
         return self._attr_current_temperature
 
     @property
@@ -170,20 +166,22 @@ class LuxtronikThermostat(ClimateEntity, RestoreEntity):
             self._attr_target_temperature = self._luxtronik.get_value(
                 self._target_temperature_sensor)
         else:
-            self._attr_target_temperature = float(self.hass.states.get(
-                self._target_temperature_sensor).state)
+            self._attr_target_temperature = self.__get_state_temperature(
+                self._target_temperature_sensor)
         return self._attr_target_temperature
 
-    @callback
-    def _async_update_temp(self, state):
-        """Update thermostat with latest state from sensor."""
+    def __get_state_temperature(self, entity_id: str) -> float | None:
+        """Return the temperature of an entity, or None when its state is not a number."""
+        state = self.hass.states.get(entity_id)
+        if state is None:
+            return None
         try:
-            cur_temp = float(state.state)
-            if math.isnan(cur_temp) or math.isinf(cur_temp):
-                raise ValueError(f"Sensor has illegal state {state.state}")
-            self._attr_current_temperature = cur_temp
-        except ValueError as ex:
-            LOGGER.error("Unable to update from sensor: %s", ex)
+            temperature = float(state.state)
+        except ValueError:
+            return None
+        if math.isnan(temperature) or math.isinf(temperature):
+            return None
+        return temperature
 
     def set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""

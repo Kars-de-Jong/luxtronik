@@ -1,4 +1,5 @@
 """Test the climate platform setup."""
+import pytest
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -39,3 +40,17 @@ async def test_indoor_temperature_sensor_from_options(hass, luxtronik):
     options = {CONF_CONTROL_MODE_HOME_ASSISTANT: False, CONF_HA_SENSOR_INDOOR_TEMPERATURE: "sensor.from_options"}
 
     assert await _heating_temperature(hass, data, options) == 21.5
+
+
+@pytest.mark.parametrize("state", ["unavailable", "unknown", "not a number", "nan"])
+async def test_indoor_temperature_sensor_without_number(hass, luxtronik, state):
+    """A source sensor without a numeric state gives no current temperature."""
+    hass.states.async_set("sensor.indoor", state)
+    data = {**DATA, CONF_HA_SENSOR_INDOOR_TEMPERATURE: "sensor.indoor"}
+    entry = MockConfigEntry(domain=DOMAIN, version=3, unique_id=SERIAL, data=data)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    entity_id = er.async_get(hass).async_get_entity_id("climate", DOMAIN, f"{SERIAL}_heating")
+    assert hass.states.get(entity_id).attributes["current_temperature"] is None
