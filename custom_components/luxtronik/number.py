@@ -1,7 +1,7 @@
 """Luxtronik heatpump number."""
 # region Imports
 from datetime import date, datetime
-from typing import Any, cast
+from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
@@ -13,6 +13,7 @@ from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.util import dt as dt_util
 
 from . import LuxtronikDevice
 from .model import LuxtronikConfigEntry
@@ -338,7 +339,7 @@ class LuxtronikNumber(NumberEntity, RestoreEntity):
 
 
 class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):
-    _last_thermal_desinfection: datetime.date = None
+    _last_thermal_desinfection: date | None = None
 
     def __init__(self, *args, **kwargs):
         super(LuxtronikNumberThermalDesinfection, self).__init__(*args, **kwargs)
@@ -351,12 +352,19 @@ class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):
     def update(self):
         LuxtronikNumber.update(self)
         domesticWaterCurrent = float(self._luxtronik.get_value(LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE))
-        if domesticWaterCurrent >= float(self.native_value) and (self._last_thermal_desinfection is None or self._last_thermal_desinfection == "" or (isinstance(self._last_thermal_desinfection, date) and cast(date, self._last_thermal_desinfection) < datetime.now().date())):
-            self._last_thermal_desinfection = datetime.now().date
-            self._attr_extra_state_attributes = {
-                ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: self._number_key,
-                ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION: datetime.now()
-            }
+        now = dt_util.now()
+        if domesticWaterCurrent >= float(self.native_value) and (
+            self._last_thermal_desinfection is None
+            or self._last_thermal_desinfection < now.date()
+        ):
+            self._set_last_thermal_desinfection(now)
+
+    def _set_last_thermal_desinfection(self, timestamp: datetime) -> None:
+        self._last_thermal_desinfection = dt_util.as_local(timestamp).date()
+        self._attr_extra_state_attributes = {
+            ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: self._number_key,
+            ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION: timestamp
+        }
 
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
@@ -372,12 +380,15 @@ class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):
             return
         self._state = state.state
 
-        if ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION in state.attributes:
-            self._last_thermal_desinfection = state.attributes[ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION]
-            self._attr_extra_state_attributes = {
-                ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY: self._number_key,
-                ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION: self._last_thermal_desinfection
-            }
+        # The restored attribute is an ISO formatted string.
+        last = state.attributes.get(ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION)
+        if isinstance(last, str):
+            last = dt_util.parse_datetime(last)
+        if isinstance(last, datetime):
+            if last.tzinfo is None:
+                # Older versions stored the local time without a time zone.
+                last = last.replace(tzinfo=dt_util.get_default_time_zone())
+            self._set_last_thermal_desinfection(last)
 
     @callback
     def _schedule_immediate_update(self):
