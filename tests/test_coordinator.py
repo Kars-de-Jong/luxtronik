@@ -5,11 +5,13 @@ from datetime import timedelta
 
 from homeassistant.const import CONF_HOST, CONF_PORT, STATE_UNAVAILABLE
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN)
 from custom_components.luxtronik.coordinator import LuxtronikCoordinator
+from custom_components.luxtronik.update import LuxtronikUpdateEntity
 from .conftest import SERIAL
 
 # One entity of every platform that follows the heatpump data.
@@ -112,3 +114,27 @@ async def test_entities_unavailable_on_lock_timeout(hass, luxtronik):
     await hass.async_block_till_done()
 
     assert set(_states(hass).values()) == {STATE_UNAVAILABLE}
+
+
+async def test_unload_stops_reading(hass, luxtronik):
+    """After unloading, the heatpump is no longer read and no listeners are left."""
+    entry = await _setup(hass)
+    coordinator = entry.runtime_data.coordinator
+    assert coordinator._listeners
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    luxtronik.read.reset_mock()
+    # The conftest fixture replaces the request to the download portal with a mock.
+    fetch = LuxtronikUpdateEntity._async_fetch_latest_version
+    fetch.reset_mock()
+
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=5))
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(hours=2))
+    await hass.async_block_till_done()
+
+    luxtronik.read.assert_not_called()
+    fetch.assert_not_called()
+    assert not coordinator._listeners
+    luxtronik.disconnect.assert_called_once_with()
