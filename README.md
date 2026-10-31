@@ -28,6 +28,7 @@ This integration works locally. It's only necessary to connect the Luxtronik con
 4. [Tips for using Luxtronik  ](#4-tips-for-using-luxtronik)  
 4.1 [Energy use  ](#41-energy-use)  
 4.2 [Additional sensors (advanced)  ](#42-additional-sensors-advanced)  
+4.3 [Logging  ](#43-logging)  
 5. [Actions  ](#5-actions)  
 6. [Removal  ](#6-removal)  
 
@@ -227,6 +228,16 @@ binary_sensor:
       - id: calculations.ID_WEB_EVUin
         friendly_name: Utility company lock
         icon: mdi:lock
+```
+
+### 4.3 Logging
+
+The `luxtronik` library logs every connection to the heatpump at level `info`. If your Home Assistant logs at `info` or lower, add this to `configuration.yaml` to hide those messages:
+
+```yaml
+logger:
+  logs:
+    Luxtronik: warning
 ```
 
 ## 5. Actions

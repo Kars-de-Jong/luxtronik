@@ -1,4 +1,5 @@
 """Test component setup."""
+import logging
 import threading
 from unittest.mock import patch
 
@@ -152,3 +153,10 @@ async def test_texts_are_not_loaded_in_event_loop(hass, luxtronik, language):
 
     assert loaded_in_loop
     assert not any(loaded_in_loop)
+
+
+def test_library_log_level_is_not_changed():
+    """The log level of the luxtronik library is left to the logger configuration."""
+    import custom_components.luxtronik  # noqa: F401
+    from luxtronik import LOGGER as library_logger
+    assert library_logger.level == logging.NOTSET

@@ -18,7 +18,6 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityDescription
 from homeassistant.helpers.typing import ConfigType
-from luxtronik import LOGGER as LuxLogger
 
 from .const import (
     ATTR_PARAMETER,
@@ -43,7 +42,6 @@ from .model import LuxtronikConfigEntry, LuxtronikRuntimeData
 # endregion Imports
 
 # region Constants
-LuxLogger.setLevel(level="WARNING")
 # The YAML platforms, with the config entry option that stores their sensors.
 YAML_PLATFORMS = {
     Platform.SENSOR: (CONF_SENSORS, YAML_SENSOR_SCHEMA),
