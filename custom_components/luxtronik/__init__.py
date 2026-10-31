@@ -298,7 +298,16 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
 
     if config_entry.version == 1:
         new = {**config_entry.data}
-        luxtronik = LuxtronikDevice.connect(new[CONF_HOST], new[CONF_PORT])
+        try:
+            luxtronik = await hass.async_add_executor_job(
+                LuxtronikDevice.connect, new[CONF_HOST], new[CONF_PORT]
+            )
+        except OSError as err:
+            # The migration is retried when the config entry is set up again.
+            LOGGER.error(
+                "Can't migrate the config entry, heatpump at %s is unreachable: %s",
+                new[CONF_HOST], err)
+            return False
 
         _delete_legacy_devices(hass, config_entry, luxtronik.unique_id)
         hass.config_entries.async_update_entry(
