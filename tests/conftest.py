@@ -27,5 +27,6 @@ def luxtronik():
     device.get_value.side_effect = lambda key: "Automatic" if key in MODE_SENSORS else 1
     device.detect_cooling_target_temperature_sensor.return_value = "parameters.ID_Sollwert_KuCft1_akt"
     with patch("custom_components.luxtronik.LuxtronikDevice", return_value=device), \
-            patch("custom_components.luxtronik.update.LuxtronikUpdateEntity._request_available_firmware_version"):
+            patch("custom_components.luxtronik.update.LuxtronikUpdateEntity._async_fetch_latest_version",
+                  return_value=None):
         yield device

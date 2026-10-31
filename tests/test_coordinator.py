@@ -19,6 +19,7 @@ ENTITIES = [
     ("number", f"{SERIAL}_domestic_water_thermal_desinfection_target"),
     ("switch", f"{SERIAL}_heating"),
     ("climate", f"{SERIAL}_heating"),
+    ("update", f"{SERIAL}_firmware"),
 ]
 
 
