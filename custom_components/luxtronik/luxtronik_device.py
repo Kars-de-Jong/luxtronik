@@ -2,7 +2,6 @@
 # region Imports
 import re
 import threading
-import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 
@@ -17,7 +16,6 @@ from .const import (
     LUX_MK_SENSORS,
     LuxMkTypes,
 )
-from .helpers.debounce import debounce
 from .helpers.lux_helper import get_manufacturer_by_model
 
 # endregion Imports
@@ -177,22 +175,6 @@ class LuxtronikDevice:
         LOGGER.debug(f"cooling_target_temperature_sensor = '{cooling_target_temperature_sensor}' ")
         return cooling_target_temperature_sensor
 
-    def write(
-        self, parameter, value, use_debounce=True, update_immediately_after_write=False
-    ):
-        """Write a parameter to the Luxtronik heatpump.
-
-        Without debounce, returns whether the parameter was written.
-        """
-        if use_debounce:
-            self.__write_debounced(parameter, value, update_immediately_after_write)
-            return None
-        return self.__write(parameter, value, update_immediately_after_write)
-
-    @debounce(3)
-    def __write_debounced(self, parameter, value, update_immediately_after_write):
-        self.__write(parameter, value, update_immediately_after_write)
-
     @contextmanager
     def _acquire_lock(self) -> Iterator[bool]:
         """Acquire the lock within the timeout, and release it only when it was acquired."""
@@ -203,41 +185,29 @@ class LuxtronikDevice:
             if acquired:
                 self.lock.release()
 
-    def __write(self, parameter, value, update_immediately_after_write) -> bool:
-        written = False
-        try:
-            with self._acquire_lock() as acquired:
-                if acquired:
-                    LOGGER.info(
-                        'LuxtronikDevice.write %s value: "%s" - %s',
-                        parameter,
-                        value,
-                        update_immediately_after_write,
-                    )
-                    self._luxtronik.parameters.set(parameter, value)
-                    queued = dict(self._luxtronik.parameters.queue)
-                    if queued:
-                        self._luxtronik.write()
-                        self._store_written_values(queued)
-                        written = True
-                else:
-                    LOGGER.warning(
-                        "Couldn't write luxtronik parameter %s with value %s because of lock timeout %s",
-                        parameter,
-                        value,
-                        self._lock_timeout_sec,
-                    )
-        finally:
-            if update_immediately_after_write:
-                time.sleep(3)
-                self.read()
-            LOGGER.info(
-                'LuxtronikDevice.write finished %s value: "%s" - %s',
-                parameter,
-                value,
-                update_immediately_after_write,
-            )
-        return written
+    def write(self, parameter, value) -> bool:
+        """Write a parameter to the Luxtronik heatpump.
+
+        Returns whether the parameter was written. The coordinator reads the heatpump
+        afterwards.
+        """
+        with self._acquire_lock() as acquired:
+            if not acquired:
+                LOGGER.warning(
+                    "Couldn't write luxtronik parameter %s with value %s because of lock timeout %s",
+                    parameter,
+                    value,
+                    self._lock_timeout_sec,
+                )
+                return False
+            LOGGER.info('LuxtronikDevice.write %s value: "%s"', parameter, value)
+            self._luxtronik.parameters.set(parameter, value)
+            queued = dict(self._luxtronik.parameters.queue)
+            if not queued:
+                return False
+            self._luxtronik.write()
+            self._store_written_values(queued)
+            return True
 
     def _store_written_values(self, queued: dict) -> None:
         """Store the written values, so they show before the next read."""

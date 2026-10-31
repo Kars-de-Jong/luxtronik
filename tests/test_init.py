@@ -1,6 +1,7 @@
 """Test component setup."""
 import logging
 import threading
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
@@ -9,7 +10,8 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,
@@ -74,9 +76,10 @@ async def test_write_action(hass, luxtronik):
     await hass.services.async_call(
         DOMAIN, SERVICE_WRITE, {"parameter": "ID_Ba_Hz_akt", "value": "Automatic"},
         blocking=True)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=3))
+    await hass.async_block_till_done()
 
-    luxtronik.write.assert_called_once_with(
-        "ID_Ba_Hz_akt", "Automatic", use_debounce=True, update_immediately_after_write=True)
+    luxtronik.write.assert_called_once_with("ID_Ba_Hz_akt", "Automatic")
 
 
 async def test_write_action_after_unload(hass, luxtronik):

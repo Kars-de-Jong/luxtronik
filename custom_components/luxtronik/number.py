@@ -320,13 +320,11 @@ class LuxtronikNumber(LuxtronikEntity, NumberEntity, RestoreEntity):
             return value
         return value * self._factor
 
-    def set_native_value(self, value):
-        """Update the current value."""
-        # self._use_value = value
+    async def async_set_native_value(self, value: float) -> None:
+        """Write the value once it stops changing."""
         if self._factor is not None:
             value = int(value / self._factor)
-        self._luxtronik.write(self._number_key.split('.')[1], value)
-        self.schedule_update_ha_state()
+        self.coordinator.async_write_debounced(self._number_key.split('.')[1], value)
 
 
 class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):

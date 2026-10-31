@@ -2,7 +2,6 @@
 # region Imports
 
 from dataclasses import dataclass
-from functools import partial
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -110,18 +109,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         config_entry = config_entries[0]
         parameter = service.data.get(ATTR_PARAMETER)
         value = service.data.get(ATTR_VALUE)
-        luxtronik = config_entry.runtime_data.device
         update_immediately_after_write = config_entry.data.get(
             CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, True
         )
-        await hass.async_add_executor_job(
-            partial(
-                luxtronik.write,
-                parameter,
-                value,
-                use_debounce=True,
-                update_immediately_after_write=update_immediately_after_write,
-            )
+        config_entry.runtime_data.coordinator.async_write_debounced(
+            parameter, value, refresh=update_immediately_after_write
         )
 
     hass.services.async_register(

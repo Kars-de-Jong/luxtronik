@@ -48,7 +48,7 @@ def test_write_lock_timeout(device, caplog):
     """A write that can't get the lock logs a warning and doesn't release the lock of another."""
     device.lock.acquire()
     with caplog.at_level(logging.WARNING):
-        device.write("ID_Ba_Hz_akt", "Automatic", use_debounce=False)
+        device.write("ID_Ba_Hz_akt", "Automatic")
 
     device._luxtronik.write.assert_not_called()
     assert "lock timeout" in caplog.text
@@ -60,7 +60,7 @@ def test_read_and_write_release_the_lock(device):
     """The lock is free again after a read and a write."""
     device._luxtronik.parameters = Parameters(safe=False)
     device.read()
-    device.write("ID_Ba_Hz_akt", "Automatic", use_debounce=False)
+    device.write("ID_Ba_Hz_akt", "Automatic")
 
     device._luxtronik.read.assert_called_once()
     device._luxtronik.write.assert_called_once()
@@ -71,7 +71,7 @@ def test_write_stores_the_value_locally(device):
     """A written parameter shows its new value before the next read."""
     device._luxtronik.parameters = Parameters(safe=False)
 
-    assert device.write("ID_Ba_Hz_akt", "Party", use_debounce=False) is True
+    assert device.write("ID_Ba_Hz_akt", "Party") is True
 
     assert device.get_value("parameters.ID_Ba_Hz_akt") == "Party"
     device._luxtronik.read.assert_not_called()
@@ -81,7 +81,7 @@ def test_write_unknown_parameter_stores_nothing(device):
     """Nothing is written or stored when the library rejects the parameter."""
     device._luxtronik.parameters = Parameters(safe=False)
 
-    assert device.write("ID_Does_Not_Exist", 1, use_debounce=False) is False
+    assert device.write("ID_Does_Not_Exist", 1) is False
 
     device._luxtronik.write.assert_not_called()
 

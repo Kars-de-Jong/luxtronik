@@ -265,7 +265,7 @@ data:
 Things to know:
 
 - The action writes to the first loaded Luxtronik heatpump. If you have set up more than one heatpump, you cannot choose which one. If no heatpump is loaded, the action fails with the error "No Luxtronik heatpump is loaded".
-- Writes are delayed by 3 seconds. If the action is called again within those 3 seconds, the earlier call is dropped and only the last one is written, even if it was for a different parameter. Leave at least 3 seconds between calls when you change several parameters in a row.
+- Writes are delayed by 3 seconds. If the action is called again for the same parameter within those 3 seconds, only the last value is written. Writes to different parameters don't affect each other.
 - If **Update immediately after writing** is enabled for the heatpump (the default), all values are read again 3 seconds after the write, so the change shows up without waiting for the next update.
 - The action returns as soon as the write has been scheduled. An unknown parameter ID is not reported as an error; it is only logged as a warning in the Home Assistant log and nothing is written.
 
