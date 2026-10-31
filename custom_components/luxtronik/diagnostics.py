@@ -1,12 +1,12 @@
 """Diagnostics support for Luxtronik."""
 from __future__ import annotations
 
+import asyncio
 from functools import partial
 from ipaddress import IPv6Address, ip_address
 
-from async_timeout import timeout
 from getmac import get_mac_address
-from homeassistant.components.diagnostics import async_redact_data
+from homeassistant.components.diagnostics import REDACTED, async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (CONF_HOST, CONF_PASSWORD, CONF_PORT,
                                  CONF_USERNAME)
@@ -14,7 +14,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry
 from luxtronik import Luxtronik as Lux
 
-TO_REDACT = {CONF_USERNAME, CONF_PASSWORD}
+# The title and unique_id contain the serial number.
+TO_REDACT = {CONF_HOST, CONF_USERNAME, CONF_PASSWORD, "title", "unique_id"}
+SERIAL_NUMBER_PREFIX = "ID_WP_SerienNummer"
 
 
 async def async_get_config_entry_diagnostics(
@@ -22,12 +24,13 @@ async def async_get_config_entry_diagnostics(
 ) -> dict:
     """Return diagnostics for a config entry."""
     data: dict = entry.data
-    client = Lux(data[CONF_HOST], data[CONF_PORT], True)
-    client.read()
+    # The client reads the heatpump when it is created.
+    client = await hass.async_add_executor_job(Lux, data[CONF_HOST], data[CONF_PORT], True)
 
-    mac = ""
-    async with timeout(10):
+    async with asyncio.timeout(10):
         mac = await _async_get_mac_address(hass, data[CONF_HOST])
+    if mac is not None:
+        # Keep only the vendor part, which identifies the manufacturer.
         mac = mac[:9] + '*'
 
     entry_data = async_redact_data(entry.as_dict(), TO_REDACT)
@@ -46,7 +49,8 @@ async def async_get_config_entry_diagnostics(
 def _dump_items(items: dict) -> dict:
     dump = dict()
     for index, item in items.items():
-        dump[f"{index:<4d} {item.name:<60}"] = f"{items.get(index)}"
+        value = REDACTED if item.name.startswith(SERIAL_NUMBER_PREFIX) else f"{items.get(index)}"
+        dump[f"{index:<4d} {item.name:<60}"] = value
     return dump
 
 
