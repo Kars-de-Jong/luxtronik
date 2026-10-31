@@ -10,6 +10,7 @@ from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
                                  UnitOfElectricPotential, UnitOfEnergy, UnitOfPower,
                                  UnitOfPressure, UnitOfTemperature, UnitOfTime)
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
@@ -947,24 +948,29 @@ class LuxtronikStatusSensor(LuxtronikSensor, RestoreEntity):
 
         self._last_state = self.native_value
 
-    def _get_sensor_value(self, sensor_name: str):
-        sensor = self.hass.states.get(sensor_name)
+    def _get_sensor_state(self, key: str):
+        """Get the state of another sensor of this heatpump by its unique_id key."""
+        entity_id = er.async_get(self.hass).async_get_entity_id(
+            "sensor", DOMAIN, f"{self._luxtronik.unique_id}_{key}"
+        )
+        return None if entity_id is None else self.hass.states.get(entity_id)
+
+    def _get_sensor_value(self, key: str):
+        sensor = self._get_sensor_state(key)
         if sensor is not None:
             return sensor.state
         return None
 
-    def _get_sensor_attr(self, sensor_name: str, attr: str):
-        sensor = self.hass.states.get(sensor_name)
+    def _get_sensor_attr(self, key: str, attr: str):
+        sensor = self._get_sensor_state(key)
         if sensor is not None and attr in sensor.attributes:
             return sensor.attributes[attr]
         return None
 
     def _build_status_text(self) -> str:
-        status_time = self._get_sensor_attr(
-            f"sensor.{DOMAIN}_status_time", ATTR_STATUS_TEXT
-        )
-        line_1 = self._get_sensor_value(f"sensor.{DOMAIN}_status_line_1")
-        line_2 = self._get_sensor_value(f"sensor.{DOMAIN}_status_line_2")
+        status_time = self._get_sensor_attr("status_time", ATTR_STATUS_TEXT)
+        line_1 = self._get_sensor_value("status_line_1")
+        line_2 = self._get_sensor_value("status_line_2")
         if (
             status_time is None
             or status_time == STATE_UNAVAILABLE
