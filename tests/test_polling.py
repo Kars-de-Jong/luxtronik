@@ -38,3 +38,20 @@ def test_update_entity_requests_firmware_version_on_every_poll():
         entity.update()
         entity.update()
     assert request.call_count == 2
+
+
+@pytest.mark.parametrize(
+    ("platform", "parallel_updates"),
+    [
+        ("sensor", 0),
+        ("binary_sensor", 0),
+        ("update", 0),
+        ("number", 1),
+        ("switch", 1),
+        ("climate", 1),
+    ],
+)
+def test_parallel_updates(platform, parallel_updates):
+    """Read-only platforms don't limit updates; writing platforms send one write at a time."""
+    module = import_module(f"custom_components.luxtronik.{platform}")
+    assert module.PARALLEL_UPDATES == parallel_updates

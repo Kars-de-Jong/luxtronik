@@ -40,6 +40,8 @@ from .model import LuxtronikConfigEntry
 # endregion Imports
 
 # region Constants
+# The coordinator reads the heatpump; these entities only read its data.
+PARALLEL_UPDATES = 0
 # endregion Constants
 
 # region Setup

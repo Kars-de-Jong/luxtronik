@@ -34,6 +34,8 @@ from .model import LuxtronikConfigEntry
 # endregion Imports
 
 # region Constants
+# The coordinator reads the heatpump; these entities only read its data.
+PARALLEL_UPDATES = 0
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_SENSORS): vol.All(cv.ensure_list, [YAML_BINARY_SENSOR_SCHEMA])

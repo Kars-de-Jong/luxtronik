@@ -23,6 +23,8 @@ from .helpers.lux_helper import get_manufacturer_firmware_url_by_model
 
 # The download portal is queried on every poll; firmware releases are rare.
 SCAN_INTERVAL: Final = timedelta(hours=1)
+# The entity can't install firmware, so its updates are not limited.
+PARALLEL_UPDATES = 0
 
 
 @dataclass

@@ -37,6 +37,8 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION,
 # endregion Imports
 
 # region Constants
+# Send one write to the heatpump at a time.
+PARALLEL_UPDATES = 1
 # endregion Constants
 
 # region Setup

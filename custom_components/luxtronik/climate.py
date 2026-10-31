@@ -40,6 +40,8 @@ from .const import (CONF_CALCULATIONS, CONF_CONTROL_MODE_HOME_ASSISTANT,
 # endregion Imports
 
 # region Constants
+# Send one write to the heatpump at a time.
+PARALLEL_UPDATES = 1
 SUPPORT_FLAGS: Final = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
 OPERATION_LIST: Final = [HVACMode.AUTO, HVACMode.OFF]
 

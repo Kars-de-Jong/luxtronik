@@ -37,7 +37,7 @@ rules:
   entity-unavailable: todo
   integration-owner: todo
   log-when-unavailable: done
-  parallel-updates: todo
+  parallel-updates: done
   reauthentication-flow:
     status: exempt
     comment: The heatpump controller does not require authentication.
