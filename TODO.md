@@ -10,6 +10,7 @@ Conventions from the Bronze work:
 - **Use the shared test fixtures.** `tests/conftest.py` has a `luxtronik` fixture: a MagicMock device patched over `custom_components.luxtronik.LuxtronikDevice`.
 - **No `Co-Authored-By` lines** in commits.
 - **Update `quality_scale.yaml`** when a fix completes a quality scale rule.
+- **Validate with hassfest** after changes to `manifest.json`, `strings.json`, `translations/`, `services.yaml` or `quality_scale.yaml`: `docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest` from the repository root. This is the image the `home-assistant/actions/hassfest` GitHub Action uses. It currently reports the errors listed in item 13; a fix must not add new ones.
 
 ## Bugs
 
@@ -105,7 +106,13 @@ Conventions from the Bronze work:
 - `setup.cfg` sets `max-line-length = 88` but ignores E501.
 - `tests/test_entity_naming.py` defines its own `SERIAL` while `tests/conftest.py` also has one.
 - Coverage counts only function bodies in `custom_components`, because modules are imported before coverage starts, so module-level lines aren't measured.
-- Consider adding the `home-assistant/actions/hassfest` GitHub Action to `.github/workflows/validate.yaml` to validate `manifest.json` and `quality_scale.yaml`.
+- Consider adding the `home-assistant/actions/hassfest` GitHub Action to `.github/workflows/validate.yaml` to validate `manifest.json` and `quality_scale.yaml`. Fix the errors in item 13 first, or the job fails.
+
+### 13. hassfest errors
+Running hassfest (see Conventions) currently reports:
+- **`manifest.json` has a `homeassistant` key.** Not a valid manifest option; the minimum version belongs in `hacs.json` only, which already has it. Remove it from the manifest.
+- **Domain does not match the directory name.** The domain is `luxtronik2`, the directory is `luxtronik`. Renaming either one is a breaking change (entity IDs, config entries, the `luxtronik2.write` action, YAML config), inherited from upstream. Decide whether to fix it with a migration or accept this error.
+- **Invalid translation key `-1`** in `entity.sensor.switchoff_reason.state` in `strings.json` and `translations/en.json`. State keys must match `[a-z0-9-_]+` and can't start with a hyphen. Map the value `-1` to a valid key (e.g. `unknown`) in the sensor, then rename the translation key.
 
 ## Next quality scale tier (Silver)
 See `quality_scale.yaml` for the full list. The relevant items found so far:
