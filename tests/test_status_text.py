@@ -1,7 +1,6 @@
 """Test the status text of the status sensor."""
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_component import async_update_entity
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
@@ -39,8 +38,9 @@ async def test_status_text_uses_generated_entity_ids(hass, luxtronik):
     status = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{SERIAL}_status")
     assert status_time != f"sensor.{DOMAIN}_status_time"
 
-    await async_update_entity(hass, status_time)
-    await async_update_entity(hass, status)
+    # The status sensor reads the status time sensor, which is updated after it.
+    await entry.runtime_data.coordinator.async_refresh()
+    await entry.runtime_data.coordinator.async_refresh()
     await hass.async_block_till_done()
 
     status_text = hass.states.get(status).attributes["status_text"]

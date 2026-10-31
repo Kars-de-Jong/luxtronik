@@ -4,6 +4,7 @@ import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
+from luxtronik.parameters import Parameters
 
 from custom_components.luxtronik.luxtronik_device import LuxtronikDevice
 
@@ -57,10 +58,30 @@ def test_write_lock_timeout(device, caplog):
 
 def test_read_and_write_release_the_lock(device):
     """The lock is free again after a read and a write."""
+    device._luxtronik.parameters = Parameters(safe=False)
     device.read()
     device.write("ID_Ba_Hz_akt", "Automatic", use_debounce=False)
 
     device._luxtronik.read.assert_called_once()
-    device._luxtronik.parameters.set.assert_called_once_with("ID_Ba_Hz_akt", "Automatic")
     device._luxtronik.write.assert_called_once()
     assert not device.lock.locked()
+
+
+def test_write_stores_the_value_locally(device):
+    """A written parameter shows its new value before the next read."""
+    device._luxtronik.parameters = Parameters(safe=False)
+
+    assert device.write("ID_Ba_Hz_akt", "Party", use_debounce=False) is True
+
+    assert device.get_value("parameters.ID_Ba_Hz_akt") == "Party"
+    device._luxtronik.read.assert_not_called()
+
+
+def test_write_unknown_parameter_stores_nothing(device):
+    """Nothing is written or stored when the library rejects the parameter."""
+    device._luxtronik.parameters = Parameters(safe=False)
+
+    assert device.write("ID_Does_Not_Exist", 1, use_debounce=False) is False
+
+    device._luxtronik.write.assert_not_called()
+

@@ -180,11 +180,14 @@ class LuxtronikDevice:
     def write(
         self, parameter, value, use_debounce=True, update_immediately_after_write=False
     ):
-        """Write a parameter to the Luxtronik heatpump."""
+        """Write a parameter to the Luxtronik heatpump.
+
+        Without debounce, returns whether the parameter was written.
+        """
         if use_debounce:
             self.__write_debounced(parameter, value, update_immediately_after_write)
-        else:
-            self.__write(parameter, value, update_immediately_after_write)
+            return None
+        return self.__write(parameter, value, update_immediately_after_write)
 
     @debounce(3)
     def __write_debounced(self, parameter, value, update_immediately_after_write):
@@ -200,7 +203,8 @@ class LuxtronikDevice:
             if acquired:
                 self.lock.release()
 
-    def __write(self, parameter, value, update_immediately_after_write):
+    def __write(self, parameter, value, update_immediately_after_write) -> bool:
+        written = False
         try:
             with self._acquire_lock() as acquired:
                 if acquired:
@@ -211,7 +215,11 @@ class LuxtronikDevice:
                         update_immediately_after_write,
                     )
                     self._luxtronik.parameters.set(parameter, value)
-                    self._luxtronik.write()
+                    queued = dict(self._luxtronik.parameters.queue)
+                    if queued:
+                        self._luxtronik.write()
+                        self._store_written_values(queued)
+                        written = True
                 else:
                     LOGGER.warning(
                         "Couldn't write luxtronik parameter %s with value %s because of lock timeout %s",
@@ -229,6 +237,17 @@ class LuxtronikDevice:
                 value,
                 update_immediately_after_write,
             )
+        return written
+
+    def _store_written_values(self, queued: dict) -> None:
+        """Store the written values, so they show before the next read."""
+        for index, raw_value in queued.items():
+            # The library only writes integer indexes and values.
+            if not isinstance(index, int) or not isinstance(raw_value, int):
+                continue
+            parameter = self._luxtronik.parameters.parameters.get(index)
+            if parameter is not None:
+                parameter.value = parameter.from_heatpump(raw_value)
 
     def read(self):
         """Get the data from Luxtronik.
