@@ -15,6 +15,8 @@ Conventions from the Bronze work:
 ## Bugs
 
 ### 1. The write debounce drops writes to other parameters and other heatpumps
+**Fixed** in `ca8b457`.
+
 - **Where:** `helpers/debounce.py` and `luxtronik_device.py:193` (`@debounce(3)` on `__write_debounced`).
 - **Problem:** the decorator keeps a single `Timer` on the decorated *function*. That timer is shared across all calls, all parameters and all `LuxtronikDevice` instances. Two writes within 3 s cancel each other, so only the last one is executed, even if it is for a different parameter or a different heatpump. Entities (climate, number, switch) and the `luxtronik2.write` action all write through it.
 - **Fix idea:**
@@ -51,6 +53,8 @@ Conventions from the Bronze work:
 - **Test:** extend `tests/test_migration.py`.
 
 ### 5. Firmware update entity: blocking I/O and concurrent HTTP requests
+**Fixed** in `cc1e11f`.
+
 - **Where:** `update.py`.
 - **Problems:**
   - `luxtronik_device.read()` is called in `async_setup_entry` (line ~45) and again in the entity `__init__` (~85). This is blocking socket I/O in the event loop.
@@ -78,6 +82,8 @@ Conventions from the Bronze work:
 - **Values are strings:** the `text` selector in `services.yaml` sends strings. Parameters whose conversion uses `int()` would fail on input like "19.0".
 
 ### 8. Remove dead dispatcher subscriptions
+**Fixed** in `bec9b2e`.
+
 - **Where:** `sensor.py:1064` (`LuxtronikStatusSensor`) and `number.py:363` (`LuxtronikNumberThermalDesinfection`).
 - **Problem:** both subscribe to `f"{DOMAIN}_data_updated"`, but nothing ever calls `async_dispatcher_send` for that signal. They are cleaned up correctly now, but they never fire.
 - **Fix:** remove them (and `_schedule_immediate_update`), and update `tests/test_entity_event_setup.py` to match. Alternatively, send the signal after a write that re-reads values (`update_immediately_after_write`), if that was the original intent.
@@ -123,24 +129,28 @@ Running hassfest (see Conventions) currently reports:
 - **Invalid translation key `-1`** in `entity.sensor.switchoff_reason.state` in `strings.json` and `translations/en.json`. State keys must match `[a-z0-9-_]+` and can't start with a hyphen. Map the value `-1` to a valid key (e.g. `unknown`) in the sensor, then rename the translation key.
 
 ### 14. Findings from the best practices review
-Fixed: status text entity IDs (`dca88d5`), reads in the event loop during setup (`b167aa1`), diagnostics (`271456b`), climate source sensor without a number (`5d55250`), library log level (`5ed06dc`), invalid device classes and unit (`224f5c3`), `ATTR_TEMPERATURE` import (`483f582`).
+Fixed: status text entity IDs (`dca88d5`), reads in the event loop during setup (`b167aa1`), diagnostics (`271456b`), climate source sensor without a number (`5d55250`), library log level (`5ed06dc`), invalid device classes and unit (`224f5c3`), `ATTR_TEMPERATURE` import (`483f582`), `DataUpdateCoordinator` (`cdef415`, with `PARALLEL_UPDATES` in `0a9163e` and refreshes after writes in `fe2a654`).
 
 Open:
-- **Use a `DataUpdateCoordinator`.** Every entity polls and calls the throttled `luxtronik.update()`. A coordinator in `runtime_data` with a shared `CoordinatorEntity` base class covers `entity-unavailable`, `log-when-unavailable` and `parallel-updates`, and lets writes call `async_request_refresh()` instead of `time.sleep(3)` + `read()`. Do this together with items 1, 5 and 8.
 - **Use HA translations instead of the own text files.** Device names via `translation_key` on the device info, status sensors as `SensorDeviceClass.ENUM` with translated states, the action texts in the `services` section of `strings.json`, exception translations. `translations/climate.de.json` is not loaded by anything.
 - **Icons:** move the `icon` properties to `icons.json` (`icon-translations`).
 - **Extra state attributes** have free-text German keys (`'WP Seit (ID_WEB_Time_WPein_akt)'`, `'EVU first start time'`) and every entity has `Luxtronik_Key`. Prefer snake_case keys, or separate disabled-by-default diagnostic sensors. Breaking for automations that use them.
 - **Config flow:** `FlowResult` is deprecated, use `ConfigFlowResult`; type `async_step_dhcp` with `DhcpServiceInfo`; consider `OptionsFlowWithReload` instead of the update listener.
 - **Dead code:** `async_setup_platform` with `pass` in `climate.py` and `number.py`; the `EVENT_HOMEASSISTANT_STOP` listener calls a no-op `disconnect()`; `f"sensor.{DOMAIN}_status_time"` in `recorder.py` is an entity ID in a list of attribute names.
 - **Logging:** setup logs the full config entry at `info` level; f-strings in log calls; `LOGGER.critical(group_sensor_id, error)` in `get_sensor_by_id` has no format string.
-- **`manifest.json`:** `after_dependencies: ["http"]` looks unused; `requests` is used but undeclared (goes away with item 5).
+- **`manifest.json`:** `after_dependencies: ["http"]` looks unused.
 - **`LuxtronikEntityDescription`** should be `@dataclass(frozen=True, kw_only=True)`.
 - **`setup.cfg`:** mypy targets Python 3.7 with `ignore_errors = true`.
+- **Coordinator follow-ups:**
+  - The status sensor builds `status_text` from the states of the status time and status line sensors. They are updated after it, so the text lags one update (30 s) behind. Building it from the device values would fix that.
+  - The climate entity reads the indoor temperature sensor from `hass.states` only when the coordinator updates. Tracking that sensor's state changes would show changes at once.
+  - `homeassistant.update_entity` requests a coordinator refresh, which waits 3 s like the refresh after a write.
+  - Write failures (lock timeout, unknown parameter) are only logged; see items 6 and 7 for `action-exceptions`.
 
 ## Next quality scale tier (Silver)
 See `quality_scale.yaml` for the full list. The relevant items found so far:
-- **`parallel-updates`:** nothing sets `PARALLEL_UPDATES`.
+- **`parallel-updates`:** done in `0a9163e`.
 - **`action-exceptions`:** see items 6 and 7.
-- **`log-when-unavailable` and `entity-unavailable`:** entities don't go unavailable when reads fail.
-- **`config-entry-unloading`:** probably close to done after the runtime-data work. Verify, then mark it.
+- **`log-when-unavailable` and `entity-unavailable`:** done in `cdef415` and `cc1e11f`.
+- **`config-entry-unloading`:** done in `c81434c`.
 - **`reauthentication-flow`:** exempt, because there is no authentication.
