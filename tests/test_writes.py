@@ -328,3 +328,50 @@ async def test_write_action_unknown_parameter(hass, luxtronik, values):
     assert err.value.translation_placeholders == {"parameter": "ID_Does_Not_Exist"}
     await _wait(hass, 3)
     assert luxtronik.writes == []
+
+
+async def test_write_action_read_only_parameter(hass, luxtronik, values):
+    """The write action fails for a parameter that safe mode doesn't allow to write."""
+    await _setup(hass)
+    luxtronik.is_writable.return_value = False
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _write_action(hass, "ID_Ba_Al_akt", "1")
+
+    assert err.value.translation_domain == DOMAIN
+    assert err.value.translation_key == "read_only_parameter"
+    assert err.value.translation_placeholders == {"parameter": "ID_Ba_Al_akt"}
+    await _wait(hass, 3)
+    assert luxtronik.writes == []
+
+
+async def test_write_action_invalid_value(hass, luxtronik, values):
+    """The write action fails for a value the parameter doesn't accept and writes nothing."""
+    await _setup(hass)
+    luxtronik.is_valid_value.return_value = False
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _write_action(hass, "ID_Ba_Hz_akt", "party")
+
+    assert err.value.translation_domain == DOMAIN
+    assert err.value.translation_key == "invalid_value"
+    assert err.value.translation_placeholders == {"parameter": "ID_Ba_Hz_akt", "value": "party"}
+    luxtronik.is_valid_value.assert_called_once_with("ID_Ba_Hz_akt", "party")
+    await _wait(hass, 3)
+    assert luxtronik.writes == []
+
+
+@pytest.mark.parametrize(("value", "written"), [
+    ("19.0", 19), ("19", 19), ("19.5", 19.5), (" 19 ", 19), (20, 20), ("Automatic", "Automatic"),
+    ("nan", "nan"), ("inf", "inf"),
+])
+async def test_write_action_converts_numbers(hass, luxtronik, values, value, written):
+    """The text field sends numbers as text; they are written as numbers."""
+    await _setup(hass)
+
+    await _write_action(hass, "ID_Ba_Hz_akt", value)
+    await _wait(hass, 3)
+
+    assert luxtronik.writes[0][:2] == ("ID_Ba_Hz_akt", written)
+    assert type(luxtronik.writes[0][1]) is type(written)
+    luxtronik.is_valid_value.assert_called_once_with("ID_Ba_Hz_akt", written)

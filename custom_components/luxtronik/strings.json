@@ -442,6 +442,12 @@
     },
     "unknown_parameter": {
       "message": "The heatpump has no parameter {parameter} that can be written."
+    },
+    "read_only_parameter": {
+      "message": "Parameter {parameter} can't be written in safe mode."
+    },
+    "invalid_value": {
+      "message": "Parameter {parameter} doesn't accept the value {value}."
     }
   }
 }

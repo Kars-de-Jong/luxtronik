@@ -102,3 +102,35 @@ def test_has_parameter(device, parameter, known):
     device._luxtronik.parameters = Parameters(safe=False)
 
     assert device.has_parameter(parameter) is known
+
+
+@pytest.mark.parametrize(("safe", "parameter", "writable"), [
+    (True, "ID_Ba_Hz_akt", True),
+    (True, "ID_Ba_Al_akt", False),
+    (False, "ID_Ba_Al_akt", True),
+])
+def test_is_writable(device, safe, parameter, writable):
+    """In safe mode only the parameters the library marks as writeable can be written."""
+    device._luxtronik.parameters = Parameters(safe=safe)
+
+    assert device.is_writable(parameter) is writable
+
+
+@pytest.mark.parametrize(("parameter", "value", "valid"), [
+    ("ID_Ba_Hz_akt", "Party", True),
+    ("ID_Ba_Hz_akt", "party", False),
+    ("ID_Ba_Hz_akt", 1, False),
+    ("ID_Einst_BWS_akt", 19.5, True),
+    ("ID_Einst_BWS_akt", "19.5", True),
+    ("ID_Einst_BWS_akt", "warm", False),
+    ("ID_Einst_BWS_akt", float("nan"), False),
+    ("ID_Einst_BWS_akt", float("inf"), False),
+    ("ID_Einst_BWS_akt", 1e12, False),
+    ("ID_Ba_Al_akt", 5, True),
+    ("ID_Ba_Al_akt", "5", False),
+])
+def test_is_valid_value(device, parameter, value, valid):
+    """A value is valid when the library converts it to an integer the heatpump accepts."""
+    device._luxtronik.parameters = Parameters(safe=False)
+
+    assert device.is_valid_value(parameter, value) is valid

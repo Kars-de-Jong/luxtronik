@@ -1,7 +1,9 @@
 """Support for Luxtronik heatpump controllers."""
 # region Imports
 
+import math
 from dataclasses import dataclass
+from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -104,12 +106,25 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         """Write a parameter to the Luxtronik heatpump."""
         config_entry = _async_get_write_config_entry(hass, service.data.get(ATTR_CONFIG_ENTRY_ID))
         parameter = service.data[ATTR_PARAMETER]
-        value = service.data[ATTR_VALUE]
-        if not config_entry.runtime_data.device.has_parameter(parameter):
+        value = _text_to_number(service.data[ATTR_VALUE])
+        device = config_entry.runtime_data.device
+        if not device.has_parameter(parameter):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="unknown_parameter",
                 translation_placeholders={"parameter": parameter},
+            )
+        if not device.is_writable(parameter):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="read_only_parameter",
+                translation_placeholders={"parameter": parameter},
+            )
+        if not device.is_valid_value(parameter, value):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_value",
+                translation_placeholders={"parameter": parameter, "value": str(value)},
             )
         update_immediately_after_write = config_entry.data.get(
             CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, True
@@ -122,6 +137,23 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         DOMAIN, SERVICE_WRITE, write_parameter, schema=SERVICE_WRITE_SCHEMA
     )
     return True
+
+
+def _text_to_number(value: Any) -> Any:
+    """Convert a number in a text to an int or float; return other values as they are.
+
+    The text field of the action sends numbers as text, and the library converts some
+    types of parameters with int() or by multiplying, which fails for a text.
+    """
+    if not isinstance(value, str):
+        return value
+    try:
+        number = float(value)
+    except ValueError:
+        return value
+    if not math.isfinite(number):
+        return value
+    return int(number) if number.is_integer() else number
 
 
 @callback

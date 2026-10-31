@@ -269,7 +269,9 @@ Things to know:
 - Writes are delayed by 3 seconds. If the action is called again for the same parameter within those 3 seconds, only the last value is written. Writes to different parameters don't affect each other.
 - If **Update immediately after writing** is enabled for the heatpump (the default), all values are read again 3 seconds after the write, so the change shows up without waiting for the next update.
 - The action fails if the heatpump has no parameter with the given ID or index. Parameter index 0 (`ID_Transfert_LuxNet`) can't be written, because the library skips it.
-- The action returns as soon as the write has been scheduled.
+- The action also fails if the value doesn't fit the parameter, for example an unknown operating mode such as "automatic" instead of "Automatic", or text for a temperature. For a heatpump set up in safe mode (only possible with older versions of the integration), it also fails for parameters the library doesn't mark as writable.
+- Numbers may be entered as text: "19.0" is written as the number 19.
+- The action returns as soon as the write has been scheduled. If the write itself fails later, for example because the heatpump can't be reached, the error is logged in the Home Assistant log.
 
 #### Parameters with a known function
 
@@ -294,7 +296,7 @@ The controller has over 1100 parameters, but only a small number of them have a 
 - `ID_Sollwert_KuCft3_akt` Cooling set point for mixer circuit 3, for example 20.0
 - `ID_Sollwert_AtDif3_akt` Cooling working temperature difference 3, for example 5.0
 
-> ⚠️ The integration does not check the value before writing it. Before changing a parameter it is smart to first read the current value and note it somewhere in case you want to set it back to its original value.
+> ⚠️ The integration only checks that the heatpump can store the value, not that it makes sense. Before changing a parameter it is smart to first read the current value and note it somewhere in case you want to set it back to its original value.
 All parameters can be configured as sensors and read that way (see [Additional sensors](#42-additional-sensors-advanced)).
 
 ## 6. Removal

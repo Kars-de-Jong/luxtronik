@@ -4,6 +4,7 @@ import re
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Any
 
 from luxtronik import Luxtronik as Lux
 
@@ -19,6 +20,9 @@ from .const import (
 from .helpers.lux_helper import get_manufacturer_by_model
 
 # endregion Imports
+
+INT32_MIN = -(2**31)
+INT32_MAX = 2**31 - 1
 
 
 class LuxtronikDevice:
@@ -178,6 +182,23 @@ class LuxtronikDevice:
     def has_parameter(self, parameter: str) -> bool:
         """Return whether a parameter, given by its name or index, can be written."""
         return self._find_parameter(parameter) is not None
+
+    def is_writable(self, parameter: str) -> bool:
+        """Return whether safe mode allows writing a known parameter."""
+        found = self._find_parameter(parameter)
+        return found is not None and (found.writeable or not self._luxtronik.parameters.safe)
+
+    def is_valid_value(self, parameter: str, value: Any) -> bool:
+        """Return whether a known parameter accepts a value.
+
+        The library writes a value only when it converts to an integer, and the heatpump
+        protocol sends it as a signed 32-bit integer.
+        """
+        try:
+            raw_value = self._find_parameter(parameter).to_heatpump(value)
+        except (ArithmeticError, TypeError, ValueError):
+            return False
+        return isinstance(raw_value, int) and INT32_MIN <= raw_value <= INT32_MAX
 
     def _find_parameter(self, parameter: str):
         """Find a parameter by its name or index, like the library does.

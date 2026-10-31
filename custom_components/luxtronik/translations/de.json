@@ -540,6 +540,12 @@
     },
     "unknown_parameter": {
       "message": "Die Wärmepumpe hat keinen schreibbaren Parameter {parameter}."
+    },
+    "read_only_parameter": {
+      "message": "Parameter {parameter} kann im abgesicherten Modus nicht geschrieben werden."
+    },
+    "invalid_value": {
+      "message": "Parameter {parameter} akzeptiert den Wert {value} nicht."
     }
   }
 }
