@@ -3,6 +3,8 @@
 import re
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 from homeassistant.util import Throttle
 from luxtronik import Luxtronik as Lux
@@ -192,28 +194,36 @@ class LuxtronikDevice:
     def __write_debounced(self, parameter, value, update_immediately_after_write):
         self.__write(parameter, value, update_immediately_after_write)
 
+    @contextmanager
+    def _acquire_lock(self) -> Iterator[bool]:
+        """Acquire the lock within the timeout, and release it only when it was acquired."""
+        acquired = self.lock.acquire(blocking=True, timeout=self._lock_timeout_sec)
+        try:
+            yield acquired
+        finally:
+            if acquired:
+                self.lock.release()
+
     def __write(self, parameter, value, update_immediately_after_write):
         try:
-            # TODO: change to "with"
-            # with self.lock.acquire_timeout(self._lock_timeout_sec) as lock_result:
-            if self.lock.acquire(blocking=True, timeout=self._lock_timeout_sec):
-                LOGGER.info(
-                    'LuxtronikDevice.write %s value: "%s" - %s',
-                    parameter,
-                    value,
-                    update_immediately_after_write,
-                )
-                self._luxtronik.parameters.set(parameter, value)
-                self._luxtronik.write()
-            else:
-                LOGGER.warning(
-                    "Couldn't write luxtronik parameter %s with value %s because of lock timeout %s",
-                    parameter,
-                    value,
-                    self._lock_timeout_sec,
-                )
+            with self._acquire_lock() as acquired:
+                if acquired:
+                    LOGGER.info(
+                        'LuxtronikDevice.write %s value: "%s" - %s',
+                        parameter,
+                        value,
+                        update_immediately_after_write,
+                    )
+                    self._luxtronik.parameters.set(parameter, value)
+                    self._luxtronik.write()
+                else:
+                    LOGGER.warning(
+                        "Couldn't write luxtronik parameter %s with value %s because of lock timeout %s",
+                        parameter,
+                        value,
+                        self._lock_timeout_sec,
+                    )
         finally:
-            self.lock.release()
             if update_immediately_after_write:
                 time.sleep(3)
                 self.read()
@@ -234,14 +244,11 @@ class LuxtronikDevice:
 
     def read(self):
         """Get the data from Luxtronik."""
-        try:
-            # TODO: change to "with"
-            if self.lock.acquire(blocking=True, timeout=self._lock_timeout_sec):
+        with self._acquire_lock() as acquired:
+            if acquired:
                 self._luxtronik.read()
             else:
                 LOGGER.warning(
                     "Couldn't read luxtronik data because of lock timeout %s",
                     self._lock_timeout_sec,
                 )
-        finally:
-            self.lock.release()
