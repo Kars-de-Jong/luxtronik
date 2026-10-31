@@ -6,8 +6,7 @@ from typing import Any
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import PERCENTAGE, UnitOfTemperature, UnitOfTime
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -19,7 +18,6 @@ from . import LuxtronikDevice
 from .model import LuxtronikConfigEntry
 from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION,
                     ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
-                    DOMAIN,
                     LUX_SENSOR_COOLING_START_DELAY,
                     LUX_SENSOR_COOLING_STOP_DELAY,
                     LUX_SENSOR_COOLING_THRESHOLD,
@@ -369,16 +367,9 @@ class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):
     async def async_added_to_hass(self) -> None:
         """Handle entity which will be added."""
         await super().async_added_to_hass()
-        DATA_UPDATED = f"{DOMAIN}_data_updated"
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, DATA_UPDATED, self._schedule_immediate_update
-            )
-        )
         state = await self.async_get_last_state()
         if not state:
             return
-        self._state = state.state
 
         # The restored attribute is an ISO formatted string.
         last = state.attributes.get(ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION)
@@ -389,7 +380,3 @@ class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):
                 # Older versions stored the local time without a time zone.
                 last = last.replace(tzinfo=dt_util.get_default_time_zone())
             self._set_last_thermal_desinfection(last)
-
-    @callback
-    def _schedule_immediate_update(self):
-        self.async_schedule_update_ha_state(True)

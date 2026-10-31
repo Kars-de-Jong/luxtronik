@@ -12,8 +12,8 @@ from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
 SERIAL = "2311_1234_abcd"
 DATA_UPDATED = f"{DOMAIN}_data_updated"
 
-# Entities that subscribe to the data updated signal.
-SUBSCRIBERS = {
+# Entities that used to subscribe to the data updated signal, which nothing sends.
+FORMER_SUBSCRIBERS = {
     ("sensor", f"{SERIAL}_status"): "sensor.status",
     ("number", f"{SERIAL}_domestic_water_thermal_desinfection_target"): "number.thermal_desinfection",
 }
@@ -42,25 +42,25 @@ async def _setup_and_unload(hass, entry):
     return subscribed
 
 
-async def test_dispatcher_subscribed_without_restored_state(hass, luxtronik):
-    """Entities subscribe even without a restored state and unsubscribe on unload."""
+async def test_no_dispatcher_subscriptions(hass, luxtronik):
+    """No entity subscribes to the data updated signal."""
     entry = _add_entry(hass)
 
-    assert await _setup_and_unload(hass, entry) == len(SUBSCRIBERS)
+    assert await _setup_and_unload(hass, entry) == 0
     assert _dispatcher_count(hass) == 0
 
 
-async def test_dispatcher_unsubscribed_with_restored_state(hass, luxtronik):
-    """Entities with a restored state unsubscribe from the dispatcher on unload."""
+async def test_no_dispatcher_subscriptions_with_restored_state(hass, luxtronik):
+    """Entities with a restored state don't subscribe to the data updated signal either."""
     entry = _add_entry(hass)
     ent_reg = er.async_get(hass)
-    for (platform, unique_id), entity_id in SUBSCRIBERS.items():
+    for (platform, unique_id), entity_id in FORMER_SUBSCRIBERS.items():
         ent_reg.async_get_or_create(
             platform, DOMAIN, unique_id, config_entry=entry,
             suggested_object_id=entity_id.split(".")[1])
-    mock_restore_cache(hass, [State(entity_id, "1") for entity_id in SUBSCRIBERS.values()])
+    mock_restore_cache(hass, [State(entity_id, "1") for entity_id in FORMER_SUBSCRIBERS.values()])
 
-    assert await _setup_and_unload(hass, entry) == len(SUBSCRIBERS)
+    assert await _setup_and_unload(hass, entry) == 0
     assert _dispatcher_count(hass) == 0
 
 
