@@ -9,31 +9,16 @@ Conventions from the Bronze work:
 - **Write the failing test first.** Run tests with `.venv/bin/pytest` and lint with `.venv/bin/flake8 . --count --select=E9,F63,F7,F82 --exclude=.venv`.
 - **Use the shared test fixtures.** `tests/conftest.py` has a `luxtronik` fixture: a MagicMock device patched over `custom_components.luxtronik.LuxtronikDevice`.
 - **Update `quality_scale.yaml`** when a fix completes a quality scale rule.
-- **Validate with hassfest** after changes to `manifest.json`, `strings.json`, `translations/`, `services.yaml` or `quality_scale.yaml`: `docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest` from the repository root. This is the image the `home-assistant/actions/hassfest` GitHub Action uses. It currently reports the errors listed in item 6; a fix must not add new ones.
+- **Validate with hassfest** after changes to `manifest.json`, `strings.json`, `translations/`, `services.yaml` or `quality_scale.yaml`: `docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest` from the repository root. This is the image the `home-assistant/actions/hassfest` GitHub Action uses. It currently reports the errors listed in item 4; a fix must not add new ones.
 
 ## Improvements
 
-### 1. Let the `luxtronik2.write` action target a specific heatpump
-- **Where:** `__init__.py`, `async_setup` → `write_parameter`.
-- **Problem:** the action always uses the first loaded config entry (`hass.config_entries.async_loaded_entries(DOMAIN)[0]`).
-- **Fix:**
-  - Add an optional `config_entry_id` field, with a `config_entry` selector (`integration: luxtronik2`) in `services.yaml`.
-  - Fall back to the first entry when it is omitted.
-  - Raise `ServiceValidationError` for an unknown or unloaded entry.
-- **Docs:** update the README "5. Actions" section.
-
-### 2. Unknown parameter names in `luxtronik2.write` fail silently
-- **Problem:** the `luxtronik` library (0.3.14, `parameters.py`) only logs a warning and writes nothing when a parameter is unknown. The action returns before the write happens because of the debounce, so the user gets no error.
-- **Fix:** validate the parameter in the action handler before scheduling the write: `device._luxtronik.parameters.get(parameter)`, or add a helper on `LuxtronikDevice`. Raise `ServiceValidationError` when it is unknown.
-- **Library limitation:** in `parameters.py:1201` the check `if index:` means parameter index 0 can never be written by number.
-- **Values are strings:** the `text` selector in `services.yaml` sends strings. Parameters whose conversion uses `int()` would fail on input like "19.0".
-
-### 3. YAML platforms can miss the config entry at startup
+### 1. YAML platforms can miss the config entry at startup
 - **Where:** `model.py` (`get_runtime_data`) and `sensor.py`/`binary_sensor.py` `async_setup_platform`.
 - **Problem:** if the YAML `sensor:` platform is set up before the Luxtronik config entry has stored its runtime data, the YAML sensors are skipped with a warning. The old code had the same race.
 - **Fix idea:** raise `PlatformNotReady` instead of returning, so HA retries.
 
-### 4. Config flow cleanups
+### 2. Config flow cleanups
 - **Where:** `config_flow.py`.
 - **Problems:**
   - `_async_abort_entries_match(data)` (~line 113) matches on *all* fields, so it only aborts when every option is identical. It should match on `{CONF_HOST: ..., CONF_PORT: ...}` only. The unique-id check catches real duplicates today.
@@ -45,22 +30,22 @@ Conventions from the Bronze work:
   - The `existing_instance_updated` abort string in the translations looks unused.
   - When the DHCP step finds an already configured unique id, it does not update the host of the existing entry. That is the Gold rule `discovery-update-info`.
 
-### 5. Housekeeping
+### 3. Housekeeping
 - `manifest.json` `"version"` is still `2023.9.10`.
 - README typos outside the parts that were rewritten: "ofcourse", "carfully", "heatpump und home assistant" in the intro. The YAML Binary Sensor section also doesn't mention that a UI config entry is required; the Sensor section does.
 - The tests trigger flake8 E128 warnings (continuation indent of the import blocks), and there is one E302 in `tests/test_init.py`. CI only fails on E9/F63/F7/F82.
 - `setup.cfg` sets `max-line-length = 88` but ignores E501.
 - `tests/test_entity_naming.py` defines its own `SERIAL` while `tests/conftest.py` also has one.
 - Coverage counts only function bodies in `custom_components`, because modules are imported before coverage starts, so module-level lines aren't measured.
-- Consider adding the `home-assistant/actions/hassfest` GitHub Action to `.github/workflows/validate.yaml` to validate `manifest.json` and `quality_scale.yaml`. Fix the errors in item 6 first, or the job fails.
+- Consider adding the `home-assistant/actions/hassfest` GitHub Action to `.github/workflows/validate.yaml` to validate `manifest.json` and `quality_scale.yaml`. Fix the errors in item 4 first, or the job fails.
 
-### 6. hassfest errors
+### 4. hassfest errors
 Running hassfest (see Conventions) currently reports:
 - **`manifest.json` has a `homeassistant` key.** Not a valid manifest option; the minimum version belongs in `hacs.json` only, which already has it. Remove it from the manifest.
 - **Domain does not match the directory name.** The domain is `luxtronik2`, the directory is `luxtronik`. Renaming either one is a breaking change (entity IDs, config entries, the `luxtronik2.write` action, YAML config), inherited from upstream. Decide whether to fix it with a migration or accept this error.
 - **Invalid translation key `-1`** in `entity.sensor.switchoff_reason.state` in `strings.json` and `translations/en.json`. State keys must match `[a-z0-9-_]+` and can't start with a hyphen. Map the value `-1` to a valid key (e.g. `unknown`) in the sensor, then rename the translation key.
 
-### 7. Findings from the best practices review
+### 5. Findings from the best practices review
 - **Use HA translations instead of the own text files.** Device names via `translation_key` on the device info, status sensors as `SensorDeviceClass.ENUM` with translated states, the action texts in the `services` section of `strings.json`, exception translations. `translations/climate.de.json` is not loaded by anything.
 - **Icons:** move the `icon` properties to `icons.json` (`icon-translations`).
 - **Extra state attributes** have free-text German keys (`'WP Seit (ID_WEB_Time_WPein_akt)'`, `'EVU first start time'`) and every entity has `Luxtronik_Key`. Prefer snake_case keys, or separate disabled-by-default diagnostic sensors. Breaking for automations that use them.
@@ -74,9 +59,8 @@ Running hassfest (see Conventions) currently reports:
   - The status sensor builds `status_text` from the states of the status time and status line sensors. They are updated after it, so the text lags one update (30 s) behind. Building it from the device values would fix that.
   - The climate entity reads the indoor temperature sensor from `hass.states` only when the coordinator updates. Tracking that sensor's state changes would show changes at once.
   - `homeassistant.update_entity` requests a coordinator refresh, which waits 3 s like the refresh after a write.
-  - Write failures (lock timeout, unknown parameter) are only logged; see items 1 and 2 for `action-exceptions`.
+  - Debounced writes (the `luxtronik2.write` action and the number entities) run after the call returned, so a device error (lock timeout, unreachable heatpump) is only logged. A repair issue or a persistent notification would make it visible.
 
 ## Next quality scale tier (Silver)
 See `quality_scale.yaml` for the full list. The relevant items found so far:
-- **`action-exceptions`:** see items 1 and 2.
 - **`reauthentication-flow`:** exempt, because there is no authentication.

@@ -30,7 +30,12 @@ rules:
   unique-config-entry: done
 
   # Silver
-  action-exceptions: todo
+  action-exceptions:
+    status: done
+    comment: >-
+      The write action validates its input before it schedules the debounced write. A
+      debounced write (the write action, number entities) fails after the call returned,
+      so that error is logged.
   config-entry-unloading: done
   docs-configuration-parameters: todo
   docs-installation-parameters: todo
