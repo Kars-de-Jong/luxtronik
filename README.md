@@ -250,6 +250,7 @@ Writes a parameter to the Luxtronik controller. You can call it from automations
 
 | Field | Required | Description | Example |
 |---|---|---|---|
+| `config_entry_id` | no | The heatpump to write to. In the UI you pick it from a list; in YAML it is the ID of its config entry. Without it, the first loaded heatpump is used. | |
 | `parameter` | yes | ID (or numeric index) of the parameter to write. See [Parameter IDs](#parameter-ids). | `ID_Ba_Hz_akt` |
 | `value` | yes | Value to set the parameter to: a text value such as an operating mode, or a number such as a temperature. | `Automatic` |
 
@@ -264,7 +265,7 @@ data:
 
 Things to know:
 
-- The action writes to the first loaded Luxtronik heatpump. If you have set up more than one heatpump, you cannot choose which one. If no heatpump is loaded, the action fails with the error "No Luxtronik heatpump is loaded".
+- If you have set up more than one heatpump, choose one with `config_entry_id`. Without it, the action writes to the first loaded heatpump, and fails with the error "No Luxtronik heatpump is loaded." if there is none. The action also fails if the chosen heatpump doesn't exist or isn't loaded.
 - Writes are delayed by 3 seconds. If the action is called again for the same parameter within those 3 seconds, only the last value is written. Writes to different parameters don't affect each other.
 - If **Update immediately after writing** is enabled for the heatpump (the default), all values are read again 3 seconds after the write, so the change shows up without waiting for the next update.
 - The action returns as soon as the write has been scheduled. An unknown parameter ID is not reported as an error; it is only logged as a warning in the Home Assistant log and nothing is written.

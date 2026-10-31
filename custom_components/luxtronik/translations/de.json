@@ -533,5 +533,10 @@
         "name": "Firmware"
       }
     }
+  },
+  "exceptions": {
+    "no_loaded_entry": {
+      "message": "Es ist keine Luxtronik-Wärmepumpe geladen."
+    }
   }
 }

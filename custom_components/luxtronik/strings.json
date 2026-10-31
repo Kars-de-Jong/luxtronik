@@ -435,5 +435,10 @@
         "name": "Firmware"
       }
     }
+  },
+  "exceptions": {
+    "no_loaded_entry": {
+      "message": "No Luxtronik heatpump is loaded."
+    }
   }
 }

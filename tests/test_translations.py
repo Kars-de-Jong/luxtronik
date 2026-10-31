@@ -1,5 +1,6 @@
 """Test that the config and options flows are fully translated."""
 import json
+import re
 from pathlib import Path
 from unittest.mock import MagicMock, PropertyMock, patch
 
@@ -47,3 +48,19 @@ def test_flow_fields_translated(filename, section, fields):
 def test_strings_match_english(section):
     """strings.json is the source of the English translation."""
     assert _load("strings.json").get(section) == _load("translations/en.json")[section]
+
+
+def test_exceptions_translated():
+    """Every exception message is in strings.json, and the translations have the same keys."""
+    strings = _load("strings.json")["exceptions"]
+    assert strings == _load("translations/en.json")["exceptions"]
+    for filename in TRANSLATIONS:
+        exceptions = _load(filename)["exceptions"]
+        assert set(exceptions) == set(strings)
+        for key, exception in exceptions.items():
+            assert exception["message"]
+            assert _placeholders(exception["message"]) == _placeholders(strings[key]["message"])
+
+
+def _placeholders(message):
+    return set(re.findall(r"{(\w+)}", message))

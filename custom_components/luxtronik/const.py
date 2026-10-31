@@ -9,7 +9,7 @@ from typing import Final
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription, SensorStateClass
-from homeassistant.const import (CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
+from homeassistant.const import (ATTR_CONFIG_ENTRY_ID, CONF_FRIENDLY_NAME, CONF_ICON, CONF_ID,
                                  PERCENTAGE,
                                  Platform,
                                  UnitOfElectricPotential, UnitOfEnergy, UnitOfPower, UnitOfPressure, UnitOfTemperature, UnitOfTime)
@@ -57,6 +57,7 @@ ATTR_VALUE: Final = "value"
 
 SERVICE_WRITE_SCHEMA = vol.Schema(
     {
+        vol.Optional(ATTR_CONFIG_ENTRY_ID): cv.string,
         vol.Required(ATTR_PARAMETER): cv.string,
         vol.Required(ATTR_VALUE): vol.Any(cv.Number, cv.string),
     }

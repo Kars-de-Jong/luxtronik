@@ -2,6 +2,13 @@ write:
   name: Write parameter
   description: Writes a parameter to the Luxtronik heatpump.
   fields:
+    config_entry_id:
+      name: Heatpump
+      description: The heatpump to write to. Without it, the parameter is written to the first loaded heatpump.
+      required: false
+      selector:
+        config_entry:
+          integration: luxtronik2
     parameter:
       name: Parameter
       description: ID of the parameter to write.

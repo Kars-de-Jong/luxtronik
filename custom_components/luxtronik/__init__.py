@@ -7,13 +7,14 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.config import config_per_platform
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (CONF_BINARY_SENSORS, CONF_ENTITY_NAMESPACE, CONF_HOST, CONF_ID,
+from homeassistant.const import (ATTR_CONFIG_ENTRY_ID, CONF_BINARY_SENSORS, CONF_ENTITY_NAMESPACE, CONF_HOST, CONF_ID,
                                  CONF_PORT, CONF_SCAN_INTERVAL, CONF_SENSORS,
                                  EVENT_HOMEASSISTANT_STOP, Platform)
 from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import service as service_helper
 from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityDescription
 from homeassistant.helpers.typing import ConfigType
@@ -101,12 +102,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def write_parameter(service: ServiceCall) -> None:
         """Write a parameter to the Luxtronik heatpump."""
-        config_entries: list[LuxtronikConfigEntry] = (
-            hass.config_entries.async_loaded_entries(DOMAIN)
-        )
-        if not config_entries:
-            raise ServiceValidationError("No Luxtronik heatpump is loaded")
-        config_entry = config_entries[0]
+        config_entry = _async_get_write_config_entry(hass, service.data.get(ATTR_CONFIG_ENTRY_ID))
         parameter = service.data.get(ATTR_PARAMETER)
         value = service.data.get(ATTR_VALUE)
         update_immediately_after_write = config_entry.data.get(
@@ -120,6 +116,20 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         DOMAIN, SERVICE_WRITE, write_parameter, schema=SERVICE_WRITE_SCHEMA
     )
     return True
+
+
+@callback
+def _async_get_write_config_entry(
+    hass: HomeAssistant, entry_id: str | None
+) -> LuxtronikConfigEntry:
+    """Return the loaded config entry to write to, or the first loaded one without an id."""
+    if entry_id is not None:
+        return service_helper.async_get_config_entry(hass, DOMAIN, entry_id)
+    config_entries: list[LuxtronikConfigEntry] = hass.config_entries.async_loaded_entries(DOMAIN)
+    if not config_entries:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="no_loaded_entry")
+    return config_entries[0]
 
 
 @callback

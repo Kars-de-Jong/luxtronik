@@ -1,7 +1,7 @@
 """Test writing to the heatpump from the entities."""
 import threading
 from datetime import timedelta
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.components.climate import DOMAIN as CLIMATE_DOMAIN
@@ -10,8 +10,9 @@ from homeassistant.components.number import ATTR_VALUE as NUMBER_ATTR_VALUE
 from homeassistant.components.number import DOMAIN as NUMBER_DOMAIN
 from homeassistant.components.number import SERVICE_SET_VALUE
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
-from homeassistant.const import (ATTR_ENTITY_ID, ATTR_TEMPERATURE, CONF_HOST, CONF_PORT,
+from homeassistant.const import (ATTR_CONFIG_ENTRY_ID, ATTR_ENTITY_ID, ATTR_TEMPERATURE, CONF_HOST, CONF_PORT,
                                  SERVICE_TURN_ON, STATE_OFF, STATE_ON)
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
@@ -192,3 +193,123 @@ async def test_unload_writes_pending_values(hass, luxtronik, values):
     assert [w[:2] for w in luxtronik.writes] == [("ID_Ba_Hz_akt", "Party")]
     await _wait(hass, 3)
     assert len(luxtronik.writes) == 1
+
+
+OTHER_SERIAL = "2311_5678_abcd"
+
+
+@pytest.fixture
+def other_luxtronik(luxtronik):
+    """A second heatpump; the first config entry gets `luxtronik`, the second this one."""
+    other = MagicMock(
+        unique_id=OTHER_SERIAL, serial_number="2311-5678", manufacturer="Alpha Innotec",
+        model="LWD", firmware_version_minor=99, has_domestic_water_circulation_pump=True)
+    other.get_value.side_effect = lambda key: "Automatic" if key in MODE_SENSORS else 1
+    other.detect_cooling_target_temperature_sensor.return_value = None
+    other.write.return_value = True
+    with patch("custom_components.luxtronik.LuxtronikDevice", side_effect=[luxtronik, other]):
+        yield other
+
+
+async def _setup_other(hass):
+    entry = MockConfigEntry(
+        domain=DOMAIN, version=3, unique_id=OTHER_SERIAL,
+        data={CONF_HOST: "10.0.0.3", CONF_PORT: 8889, CONF_SAFE: True, CONF_LOCK_TIMEOUT: 30,
+              CONF_UPDATE_IMMEDIATELY_AFTER_WRITE: True})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    return entry
+
+
+async def test_write_action_to_chosen_heatpump(hass, luxtronik, values, other_luxtronik):
+    """The write action writes to the heatpump of the config entry it is given."""
+    await _setup(hass)
+    other = await _setup_other(hass)
+
+    await hass.services.async_call(
+        DOMAIN, SERVICE_WRITE,
+        {ATTR_CONFIG_ENTRY_ID: other.entry_id, ATTR_PARAMETER: "ID_Ba_Hz_akt",
+         ATTR_VALUE: "Party"},
+        blocking=True)
+    await _wait(hass, 3)
+
+    assert luxtronik.writes == []
+    other_luxtronik.write.assert_called_once_with("ID_Ba_Hz_akt", "Party")
+
+
+async def test_write_action_defaults_to_first_heatpump(hass, luxtronik, values, other_luxtronik):
+    """Without a config entry the write action writes to the first loaded heatpump."""
+    await _setup(hass)
+    await _setup_other(hass)
+
+    await _write_action(hass, "ID_Ba_Hz_akt", "Party")
+    await _wait(hass, 3)
+
+    assert [w[:2] for w in luxtronik.writes] == [("ID_Ba_Hz_akt", "Party")]
+    other_luxtronik.write.assert_not_called()
+
+
+async def test_write_action_unknown_config_entry(hass, luxtronik, values):
+    """The write action fails for a config entry that doesn't exist."""
+    await _setup(hass)
+
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN, SERVICE_WRITE,
+            {ATTR_CONFIG_ENTRY_ID: "does_not_exist", ATTR_PARAMETER: "ID_Ba_Hz_akt",
+             ATTR_VALUE: "Party"},
+            blocking=True)
+
+    assert err.value.translation_key == "service_config_entry_not_found"
+    await _wait(hass, 3)
+    assert luxtronik.writes == []
+
+
+async def test_write_action_config_entry_of_other_integration(hass, luxtronik, values):
+    """The write action fails for a config entry of another integration."""
+    await _setup(hass)
+    entry = MockConfigEntry(domain="other_domain")
+    entry.add_to_hass(hass)
+
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN, SERVICE_WRITE,
+            {ATTR_CONFIG_ENTRY_ID: entry.entry_id, ATTR_PARAMETER: "ID_Ba_Hz_akt",
+             ATTR_VALUE: "Party"},
+            blocking=True)
+
+    assert err.value.translation_key == "service_config_entry_wrong_domain"
+
+
+async def test_write_action_unloaded_config_entry(hass, luxtronik, values, other_luxtronik):
+    """The write action fails for a config entry that isn't loaded."""
+    await _setup(hass)
+    other = await _setup_other(hass)
+    assert await hass.config_entries.async_unload(other.entry_id)
+    await hass.async_block_till_done()
+
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN, SERVICE_WRITE,
+            {ATTR_CONFIG_ENTRY_ID: other.entry_id, ATTR_PARAMETER: "ID_Ba_Hz_akt",
+             ATTR_VALUE: "Party"},
+            blocking=True)
+
+    assert err.value.translation_key == "service_config_entry_not_loaded"
+    await _wait(hass, 3)
+    assert luxtronik.writes == []
+    other_luxtronik.write.assert_not_called()
+
+
+async def test_write_action_without_loaded_heatpump(hass, luxtronik, values):
+    """Without a config entry the write action fails when no heatpump is loaded."""
+    entry = await _setup(hass)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    with pytest.raises(ServiceValidationError) as err:
+        await _write_action(hass, "ID_Ba_Hz_akt", "Party")
+
+    assert err.value.translation_domain == DOMAIN
+    assert err.value.translation_key == "no_loaded_entry"
