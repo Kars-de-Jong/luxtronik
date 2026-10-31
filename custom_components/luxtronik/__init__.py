@@ -267,6 +267,7 @@ def build_device_info(
     luxtronik: LuxtronikDevice, name: str, ip_host: str
 ) -> DeviceInfo:
     """Build luxtronik device info."""
+    firmware_version = luxtronik.get_value("calculations.ID_WEB_SoftStand")
     device_info = DeviceInfo(
         configuration_url=f"http://{ip_host}/",
         connections=None,
@@ -284,7 +285,7 @@ def build_device_info(
         model=luxtronik.model,
         name=f"{name} {luxtronik.serial_number}",
 
-        sw_version=luxtronik.get_value("calculations.ID_WEB_SoftStand"),
+        sw_version=None if firmware_version is None else str(firmware_version),
 
     )
     LOGGER.debug("build_device_info '%s'", device_info)

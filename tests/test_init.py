@@ -160,3 +160,19 @@ def test_library_log_level_is_not_changed():
     import custom_components.luxtronik  # noqa: F401
     from luxtronik import LOGGER as library_logger
     assert library_logger.level == logging.NOTSET
+
+
+@pytest.mark.parametrize(("firmware", "sw_version"), [(1, "1"), ("V3.90.1", "V3.90.1"), (None, None)])
+async def test_device_sw_version_is_a_string(hass, luxtronik, caplog, firmware, sw_version):
+    """The firmware version of the heatpump device is a string.
+
+    The device registry converts other types itself, with a warning that this stops working.
+    """
+    luxtronik.get_value.side_effect = (
+        lambda key: firmware if key == "calculations.ID_WEB_SoftStand" else "Automatic")
+    entry = await _setup_entry(hass)
+
+    heatpump = dr.async_get(hass).async_get_device_by_identifier(
+        (DOMAIN, "2311_1234_abcd_heatpump"), entry.entry_id)
+    assert heatpump.sw_version == sw_version
+    assert "as sw_version" not in caplog.text
