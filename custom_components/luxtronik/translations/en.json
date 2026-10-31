@@ -378,6 +378,9 @@
     },
     "invalid_value": {
       "message": "Parameter {parameter} doesn't accept the value {value}."
+    },
+    "write_failed": {
+      "message": "Couldn't write parameter {parameter}: {error}"
     }
   }
 }

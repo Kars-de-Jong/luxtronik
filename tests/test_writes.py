@@ -5,14 +5,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.components.climate import DOMAIN as CLIMATE_DOMAIN
-from homeassistant.components.climate import SERVICE_SET_TEMPERATURE
+from homeassistant.components.climate import (ATTR_HVAC_MODE, SERVICE_SET_HVAC_MODE,
+                                              SERVICE_SET_TEMPERATURE,
+                                              HVACMode)
 from homeassistant.components.number import ATTR_VALUE as NUMBER_ATTR_VALUE
 from homeassistant.components.number import DOMAIN as NUMBER_DOMAIN
 from homeassistant.components.number import SERVICE_SET_VALUE
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.const import (ATTR_CONFIG_ENTRY_ID, ATTR_ENTITY_ID, ATTR_TEMPERATURE, CONF_HOST, CONF_PORT,
                                  SERVICE_TURN_ON, STATE_OFF, STATE_ON)
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
@@ -375,3 +377,70 @@ async def test_write_action_converts_numbers(hass, luxtronik, values, value, wri
     assert luxtronik.writes[0][:2] == ("ID_Ba_Hz_akt", written)
     assert type(luxtronik.writes[0][1]) is type(written)
     luxtronik.is_valid_value.assert_called_once_with("ID_Ba_Hz_akt", written)
+
+
+def _fail_writes(luxtronik, error=None):
+    """Let the writes fail: raise `error`, or reject the value when it is None."""
+    def write(parameter, value, *args, **kwargs):
+        luxtronik.writes.append((parameter, value, threading.get_ident()))
+        if error is not None:
+            raise error
+        return False
+
+    luxtronik.write = write
+
+
+@pytest.mark.parametrize(("error", "translation_key", "placeholders"), [
+    (None, "invalid_value", {"parameter": "ID_Einst_Fernwartung_akt", "value": "True"}),
+    (TimeoutError("lock timeout 30"), "write_failed",
+     {"parameter": "ID_Einst_Fernwartung_akt", "error": "lock timeout 30"}),
+    (ConnectionRefusedError("refused"), "write_failed",
+     {"parameter": "ID_Einst_Fernwartung_akt", "error": "refused"}),
+])
+async def test_switch_write_fails(hass, luxtronik, values, error, translation_key, placeholders):
+    """A failed write raises an error; the switch keeps its state and the heatpump isn't read."""
+    await _setup(hass)
+    luxtronik.read.reset_mock()
+    _fail_writes(luxtronik, error)
+
+    with pytest.raises(HomeAssistantError) as err:
+        await hass.services.async_call(
+            SWITCH_DOMAIN, SERVICE_TURN_ON, {ATTR_ENTITY_ID: REMOTE_MAINTENANCE}, blocking=True)
+
+    assert not isinstance(err.value, ServiceValidationError)
+    assert err.value.translation_domain == DOMAIN
+    assert err.value.translation_key == translation_key
+    assert err.value.translation_placeholders == placeholders
+    assert hass.states.get(REMOTE_MAINTENANCE).state == STATE_OFF
+    await _wait(hass, 3)
+    luxtronik.read.assert_not_called()
+
+
+async def test_climate_hvac_mode_not_kept_when_write_fails(hass, luxtronik, values):
+    """After a failed write the same HVAC mode can be set again."""
+    await _setup(hass)
+    _fail_writes(luxtronik, TimeoutError("lock timeout 30"))
+
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            CLIMATE_DOMAIN, SERVICE_SET_HVAC_MODE,
+            {ATTR_ENTITY_ID: DOMESTIC_WATER, ATTR_HVAC_MODE: HVACMode.OFF}, blocking=True)
+    assert hass.states.get(DOMESTIC_WATER).state == HVACMode.AUTO
+
+    luxtronik.write = lambda parameter, value: luxtronik.writes.append((parameter, value)) or True
+    await hass.services.async_call(
+        CLIMATE_DOMAIN, SERVICE_SET_HVAC_MODE,
+        {ATTR_ENTITY_ID: DOMESTIC_WATER, ATTR_HVAC_MODE: HVACMode.OFF}, blocking=True)
+    assert [w[:2] for w in luxtronik.writes] == [("ID_Ba_Bw_akt", "Off"), ("ID_Ba_Bw_akt", "Off")]
+
+
+async def test_debounced_write_failure_is_logged(hass, luxtronik, values, caplog):
+    """A debounced write fails after the action returned, so the error is logged."""
+    await _setup(hass)
+    _fail_writes(luxtronik, TimeoutError("lock timeout 30"))
+
+    await _write_action(hass, "ID_Ba_Hz_akt", "Party")
+    await _wait(hass, 3)
+
+    assert len(luxtronik.writes) == 1
+    assert "Couldn't write parameter ID_Ba_Hz_akt: lock timeout 30" in caplog.text

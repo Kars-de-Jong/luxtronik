@@ -1,5 +1,4 @@
 """Test the communication with the heatpump."""
-import logging
 import threading
 from unittest.mock import MagicMock, patch
 
@@ -44,14 +43,13 @@ def test_device_has_no_throttled_update():
     assert not hasattr(LuxtronikDevice, "update")
 
 
-def test_write_lock_timeout(device, caplog):
-    """A write that can't get the lock logs a warning and doesn't release the lock of another."""
+def test_write_lock_timeout(device):
+    """A write that can't get the lock fails and doesn't release the lock of another."""
     device.lock.acquire()
-    with caplog.at_level(logging.WARNING):
+    with pytest.raises(TimeoutError, match="lock timeout"):
         device.write("ID_Ba_Hz_akt", "Automatic")
 
     device._luxtronik.write.assert_not_called()
-    assert "lock timeout" in caplog.text
     assert device.lock.locked()
     device.lock.release()
 
@@ -134,3 +132,42 @@ def test_is_valid_value(device, parameter, value, valid):
     device._luxtronik.parameters = Parameters(safe=False)
 
     assert device.is_valid_value(parameter, value) is valid
+
+
+@pytest.mark.parametrize(("parameter", "value"), [
+    ("ID_Ba_Hz_akt", "party"),
+    ("ID_Einst_BWS_akt", "warm"),
+    ("0", 1),
+])
+def test_write_rejected_value_writes_nothing(device, parameter, value):
+    """Nothing is written or queued when the parameter doesn't accept the value."""
+    device._luxtronik.parameters = Parameters(safe=False)
+
+    assert device.write(parameter, value) is False
+
+    device._luxtronik.write.assert_not_called()
+    assert device._luxtronik.parameters.queue == {}
+
+
+def test_write_read_only_parameter_in_safe_mode(device):
+    """In safe mode a parameter the library doesn't mark as writeable is not written."""
+    device._luxtronik.parameters = Parameters(safe=True)
+
+    assert device.write("ID_Ba_Al_akt", 1) is False
+
+    device._luxtronik.write.assert_not_called()
+
+
+def test_failed_write_is_not_written_again(device):
+    """A value that couldn't be sent is not sent again with the next write."""
+    device._luxtronik.parameters = Parameters(safe=False)
+    device._luxtronik.write.side_effect = OSError("unreachable")
+    with pytest.raises(OSError):
+        device.write("ID_Ba_Hz_akt", "Party")
+    assert device._luxtronik.parameters.queue == {}
+
+    sent = []
+    device._luxtronik.write.side_effect = lambda: sent.append(
+        dict(device._luxtronik.parameters.queue))
+    assert device.write("ID_Ba_Bw_akt", "Off") is True
+    assert sent == [{4: 4}]

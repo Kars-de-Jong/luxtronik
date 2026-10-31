@@ -260,10 +260,10 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
             return
         LOGGER.info("climate.set_hvac_mode %s hvac_mode: %s",
                     self._attr_unique_id, hvac_mode)
+        lux_mode = self.__get_luxmode(hvac_mode, self.preset_mode)
+        await self.coordinator.async_write(self._heater_sensor.split('.')[1], lux_mode.value)
         self._attr_hvac_mode = hvac_mode
-        self._last_lux_mode = self.__get_luxmode(hvac_mode, self.preset_mode)
-        await self.coordinator.async_write(
-            self._heater_sensor.split('.')[1], self._last_lux_mode.value)
+        self._last_lux_mode = lux_mode
         self.async_write_ha_state()
 
     def __get_hvac_mode(self, hvac_action):
@@ -309,10 +309,10 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode."""
+        lux_mode = self.__get_luxmode(self.hvac_mode, preset_mode)
+        await self.coordinator.async_write(self._heater_sensor.split('.')[1], lux_mode.value)
         self._attr_preset_mode = preset_mode
-        self._last_lux_mode = self.__get_luxmode(self.hvac_mode, preset_mode)
-        await self.coordinator.async_write(
-            self._heater_sensor.split('.')[1], self._last_lux_mode.value)
+        self._last_lux_mode = lux_mode
         self.async_write_ha_state()
 
     # region Helper

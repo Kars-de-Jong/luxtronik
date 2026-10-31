@@ -229,24 +229,25 @@ class LuxtronikDevice:
     def write(self, parameter, value) -> bool:
         """Write a parameter to the Luxtronik heatpump.
 
-        Returns whether the parameter was written. The coordinator reads the heatpump
-        afterwards.
+        Returns False when the parameter doesn't accept the value, and raises
+        TimeoutError when the lock can't be acquired within the lock timeout. The
+        coordinator reads the heatpump afterwards.
         """
         with self._acquire_lock() as acquired:
             if not acquired:
-                LOGGER.warning(
-                    "Couldn't write luxtronik parameter %s with value %s because of lock timeout %s",
-                    parameter,
-                    value,
-                    self._lock_timeout_sec,
-                )
+                raise TimeoutError(f"lock timeout of {self._lock_timeout_sec} s")
+            if not (self.is_writable(parameter) and self.is_valid_value(parameter, value)):
                 return False
             LOGGER.info('LuxtronikDevice.write %s value: "%s"', parameter, value)
-            self._luxtronik.parameters.set(parameter, value)
-            queued = dict(self._luxtronik.parameters.queue)
-            if not queued:
-                return False
-            self._luxtronik.write()
+            parameters = self._luxtronik.parameters
+            # Don't send a value that is left over from a write that failed.
+            parameters.queue = {}
+            try:
+                parameters.set(parameter, value)
+                queued = dict(parameters.queue)
+                self._luxtronik.write()
+            finally:
+                parameters.queue = {}
             self._store_written_values(queued)
             return True
 

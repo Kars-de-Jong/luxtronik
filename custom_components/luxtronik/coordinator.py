@@ -5,6 +5,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -57,10 +58,25 @@ class LuxtronikCoordinator(DataUpdateCoordinator[None]):
             raise UpdateFailed(f"Unable to read the heatpump: {err}") from err
 
     async def async_write(self, parameter: str, value: Any, refresh: bool = True) -> None:
-        """Write a parameter, show the new value at once and read the heatpump later."""
-        written = await self.hass.async_add_executor_job(self.device.write, parameter, value)
-        if written:
-            self.async_update_listeners()
+        """Write a parameter, show the new value at once and read the heatpump later.
+
+        Raises HomeAssistantError when the write fails.
+        """
+        try:
+            written = await self.hass.async_add_executor_job(self.device.write, parameter, value)
+        except OSError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="write_failed",
+                translation_placeholders={"parameter": parameter, "error": str(err)},
+            ) from err
+        if not written:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_value",
+                translation_placeholders={"parameter": parameter, "value": str(value)},
+            )
+        self.async_update_listeners()
         if refresh:
             await self.async_request_refresh()
 
@@ -83,9 +99,9 @@ class LuxtronikCoordinator(DataUpdateCoordinator[None]):
         cancel()
         try:
             await self.async_write(parameter, value, refresh)
-        except OSError as err:
-            LOGGER.error("Couldn't write luxtronik parameter %s with value %s: %s",
-                         parameter, value, err)
+        except HomeAssistantError as err:
+            # The action or entity call that scheduled the write has already returned.
+            LOGGER.error("%s", err)
 
     async def async_shutdown(self) -> None:
         """Write the pending values before the coordinator stops."""
