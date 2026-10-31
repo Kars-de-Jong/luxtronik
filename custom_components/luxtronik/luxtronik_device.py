@@ -117,7 +117,6 @@ class LuxtronikDevice:
     def has_second_heat_generator(self) -> bool:
         """Is second heat generator activated 1=electrical heater"""
         try:
-            self.read()
             return int(self.get_value('parameters.ID_Einst_ZWE1Art_akt')) > 0
             # ID_Einst_ZWE1Fkt_akt = 1 --> Heating and domestic water
         except Exception:
@@ -127,7 +126,6 @@ class LuxtronikDevice:
     def has_domestic_water_circulation_pump(self) -> bool:
         """Exists a domestic water circulation pump. If not it is a domestic water charging pump"""
         try:
-            self.read()
             return int(self.get_value('parameters.ID_Einst_BWZIP_akt')) != 1
         except Exception:
             return False

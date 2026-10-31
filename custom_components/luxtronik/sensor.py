@@ -107,7 +107,6 @@ async def async_setup_entry(
     """Set up a Luxtronik sensor from ConfigEntry."""
     LOGGER.info(f"{DOMAIN}.sensor.async_setup_entry ConfigType: %s", config_entry)
     luxtronik = config_entry.runtime_data.device
-    luxtronik.read()
 
     device_info = config_entry.runtime_data.device_info
 
@@ -844,7 +843,6 @@ class LuxtronikIndexStatusSensor(LuxtronikSensor):
         self._update_sensor_keys()
 
     def _update_sensor_keys(self):
-        self._luxtronik.update()
         if self._key_index is None or self._key_index == "":
             index = max(self._luxtronik.get_value(f"parameters.ID_{self._key_template}_index") - 1, 0)
             self._sensor_key = f"parameters.ID_{self._key_template}_file_{index}_0"
@@ -856,6 +854,7 @@ class LuxtronikIndexStatusSensor(LuxtronikSensor):
 
     def update(self):
         """Get the latest status and use it to update our sensor state."""
+        self._luxtronik.update()
         self._update_sensor_keys()
 
     @property

@@ -41,7 +41,6 @@ async def async_setup_entry(
 
     LOGGER.debug("Setting up Luxtronik update entity")
     luxtronik_device = config_entry.runtime_data.device
-    luxtronik_device.read()
 
     description = LuxtronikUpdateEntityDescription(
         luxtronik_key="calculations.ID_WEB_SoftStand",
@@ -81,7 +80,6 @@ class LuxtronikUpdateEntity(UpdateEntity):
         self.luxtronik_key = description.luxtronik_key
 
         self._attr_translation_key = description.key
-        luxtronik_device.read()
         # self._attr_state = luxtronik_device.get_value(description.luxtronik_key)
         self._attr_unique_id = f"{luxtronik_device.unique_id}_{description.key}"
         self._request_available_firmware_version()
