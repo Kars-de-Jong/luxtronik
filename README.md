@@ -92,13 +92,22 @@ To add the heatpump manually:
 
 The following settings are available:
 
-- **Host**: the hostname or IP address of your Luxtronik controller.
-- **Port**: the network port of the controller, usually `8889` (default) or `8888` on older firmware.
-- **Control thermostats through Home Assistant (experimental)**: when a Home Assistant thermostat is idle, the off state is sent to the heatpump, so it cannot start that circuit.
-- **Update immediately after writing**: read all values from the heatpump shortly after a setting has been written, so the change shows up without waiting for the next update.
-- **Indoor temperature sensor**: the Home Assistant sensor entity that provides the current indoor temperature for the heating thermostat.
+- **Host**: the hostname or IP address of your Luxtronik controller. You can find it in the list of connected devices in your router.
+- **Port**: the network port of the controller. Most controllers use `8889` (the default); some use `8888`. Try the other port if the connection fails.
+- **Control thermostats through Home Assistant (experimental)**: when a Home Assistant thermostat is idle, the off state is sent to the heatpump, so it cannot start that circuit. Off by default.
+- **Update immediately after writing**: read all values from the heatpump shortly after a setting has been written, so the change shows up without waiting for the next update. On by default.
+- **Indoor temperature sensor**: the entity ID of the Home Assistant sensor that provides the current indoor temperature for the heating thermostat, for example `sensor.living_room_temperature`. You find the entity ID in `Settings -> Devices & services -> Entities`. If your heatpump has a room thermostat, you can use its `Heating room` sensor. The default, `sensor.luxtronik2_room_temperature`, only exists on older installations, so check that the field contains an entity that exists.
 
 > ℹ️ Ensure the IP address is static. This can be configured in your router.
+
+#### Options
+
+After setup, go to `Settings -> Devices & services`, select `Luxtronik` and click `Configure` to change these options:
+
+- **Control thermostats through Home Assistant (experimental)**: see above.
+- **Indoor temperature sensor**: see above.
+
+The integration reloads when you save the options. Host and port can't be changed here; remove and add the heatpump again to change them.
 
 > ℹ️ The connection can only be set up through the UI. The former top-level `luxtronik2:` YAML configuration is no longer supported; remove it from your `configuration.yaml`. The YAML `sensor` and `binary_sensor` platforms (see [Additional sensors](#42-additional-sensors-advanced)) still work.
 
