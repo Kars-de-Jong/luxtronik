@@ -9,6 +9,8 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.selector import (EntityFilterSelectorConfig, EntitySelector,
+                                            EntitySelectorConfig)
 
 from .const import (
     CONF_CONTROL_MODE_HOME_ASSISTANT,
@@ -25,6 +27,9 @@ from .luxtronik_device import LuxtronikDevice
 
 # endregion Imports
 
+INDOOR_TEMPERATURE_SELECTOR = EntitySelector(
+    EntitySelectorConfig(filter=EntityFilterSelectorConfig(domain="sensor", device_class="temperature")))
+
 
 class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a Luxtronik heatpump controller config flow."""
@@ -33,8 +38,6 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     _discovery_host = None
     _discovery_port = None
 
-    _sensor_prefix = DOMAIN
-
     def _get_schema(self):
         return vol.Schema(
             {
@@ -42,7 +45,7 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_PORT, default=self._discovery_port): int,
                 vol.Optional(CONF_CONTROL_MODE_HOME_ASSISTANT, default=False): bool,
                 vol.Optional(CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, default=True): bool,
-                vol.Optional(CONF_HA_SENSOR_INDOOR_TEMPERATURE, default=f"sensor.{self._sensor_prefix}_room_temperature"): str,
+                vol.Optional(CONF_HA_SENSOR_INDOOR_TEMPERATURE): INDOOR_TEMPERATURE_SELECTOR,
             }
         )
 
@@ -106,9 +109,9 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_CONTROL_MODE_HOME_ASSISTANT: user_input[
                 CONF_CONTROL_MODE_HOME_ASSISTANT
             ],
-            CONF_HA_SENSOR_INDOOR_TEMPERATURE: user_input[
+            CONF_HA_SENSOR_INDOOR_TEMPERATURE: user_input.get(
                 CONF_HA_SENSOR_INDOOR_TEMPERATURE
-            ],
+            ),
         }
         self._async_abort_entries_match(data)
 
@@ -135,8 +138,6 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 class LuxtronikOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle a Luxtronik options flow."""
 
-    _sensor_prefix = DOMAIN
-
     def _get_value(self, key: str, default=None):
         return self.config_entry.options.get(
             key, self.config_entry.data.get(key, default)
@@ -150,10 +151,11 @@ class LuxtronikOptionsFlowHandler(config_entries.OptionsFlow):
                     CONF_CONTROL_MODE_HOME_ASSISTANT,
                     default=self._get_value(CONF_CONTROL_MODE_HOME_ASSISTANT, False),
                 ): bool,
+                # A suggested value instead of a default, so the user can clear it.
                 vol.Optional(
                     CONF_HA_SENSOR_INDOOR_TEMPERATURE,
-                    default=self._get_value(CONF_HA_SENSOR_INDOOR_TEMPERATURE, f"sensor.{self._sensor_prefix}_room_temperature"),
-                ): str,
+                    description={"suggested_value": self._get_value(CONF_HA_SENSOR_INDOOR_TEMPERATURE)},
+                ): INDOOR_TEMPERATURE_SELECTOR,
             }
         )
 
@@ -164,6 +166,9 @@ class LuxtronikOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
         if user_input is not None:
+            # A cleared field is missing from the input. Store None, or the
+            # sensor from the options or the setup data would still be used.
+            user_input = {CONF_HA_SENSOR_INDOOR_TEMPERATURE: None, **user_input}
             # Keep the sensors synced from YAML.
             return self.async_create_entry(title="", data={**self.config_entry.options, **user_input})
         return self.async_show_form(

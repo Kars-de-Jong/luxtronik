@@ -96,7 +96,7 @@ The following settings are available:
 - **Port**: the network port of the controller. Most controllers use `8889` (the default); some use `8888`. Try the other port if the connection fails.
 - **Control thermostats through Home Assistant (experimental)**: when a Home Assistant thermostat is idle, the off state is sent to the heatpump, so it cannot start that circuit. Off by default.
 - **Update immediately after writing**: read all values from the heatpump shortly after a setting has been written, so the change shows up without waiting for the next update. On by default.
-- **Indoor temperature sensor**: the entity ID of the Home Assistant sensor that provides the current indoor temperature for the heating thermostat, for example `sensor.living_room_temperature`. You find the entity ID in `Settings -> Devices & services -> Entities`. If your heatpump has a room thermostat, you can use its `Heating room` sensor. The default, `sensor.luxtronik2_room_temperature`, only exists on older installations, so check that the field contains an entity that exists.
+- **Indoor temperature sensor**: the Home Assistant temperature sensor that provides the current indoor temperature for the heating thermostat, for example a living room sensor. If your heatpump has a room thermostat, you can use its `Heating room` sensor. Without a sensor, the heating thermostat shows no current temperature.
 
 > ℹ️ Ensure the IP address is static. This can be configured in your router.
 

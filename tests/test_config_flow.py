@@ -2,9 +2,11 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SENSORS
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.selector import EntitySelector
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -42,8 +44,28 @@ ENTRY_DATA = {
 
 
 def schema_defaults(result):
-    """Return the default values of the form in a flow result."""
-    return {str(key): key.default() for key in result["data_schema"].schema}
+    """Return the default values of the form in a flow result, None for a field without one."""
+    return {str(key): None if key.default is vol.UNDEFINED else key.default()
+            for key in result["data_schema"].schema}
+
+
+def schema_suggested_values(result):
+    """Return the suggested values of the form in a flow result."""
+    return {str(key): (key.description or {}).get("suggested_value")
+            for key in result["data_schema"].schema}
+
+
+def schema_field(result, name):
+    """Return the key and the validator of a field of the form in a flow result."""
+    return next((key, value) for key, value in result["data_schema"].schema.items() if str(key) == name)
+
+
+def assert_indoor_temperature_selector(result):
+    """The indoor temperature field selects a temperature sensor and has no default."""
+    key, value = schema_field(result, CONF_HA_SENSOR_INDOOR_TEMPERATURE)
+    assert isinstance(value, EntitySelector)
+    assert value.config["filter"] == [{"domain": ["sensor"], "device_class": ["temperature"]}]
+    assert key.default is vol.UNDEFINED
 
 
 @pytest.fixture
@@ -92,7 +114,21 @@ async def test_user_flow_shows_form(hass, mock_connect):
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "user"
     assert result["errors"] == {}
+    assert_indoor_temperature_selector(result)
     mock_connect.assert_not_called()
+
+
+async def test_user_flow_without_indoor_temperature_sensor(hass, mock_connect, device):
+    """The indoor temperature sensor is optional."""
+    mock_connect.return_value = device
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER})
+    user_input = {key: value for key, value in USER_INPUT.items() if key != CONF_HA_SENSOR_INDOOR_TEMPERATURE}
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input)
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"] == {**ENTRY_DATA, CONF_HA_SENSOR_INDOOR_TEMPERATURE: None}
 
 
 async def test_user_flow_aborts_when_unique_id_configured(hass, mock_connect, device):
@@ -209,8 +245,26 @@ async def test_options_flow_defaults(hass):
     assert result["type"] == FlowResultType.FORM
     assert schema_defaults(result) == {
         CONF_CONTROL_MODE_HOME_ASSISTANT: False,
-        CONF_HA_SENSOR_INDOOR_TEMPERATURE: "sensor.luxtronik2_room_temperature",
+        CONF_HA_SENSOR_INDOOR_TEMPERATURE: None,
     }
+    assert schema_suggested_values(result)[CONF_HA_SENSOR_INDOOR_TEMPERATURE] is None
+    assert_indoor_temperature_selector(result)
+
+
+async def test_options_flow_clears_indoor_temperature_sensor(hass):
+    """Clearing the indoor temperature sensor overrides the one chosen during setup."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, version=3,
+        data={CONF_HA_SENSOR_INDOOR_TEMPERATURE: "sensor.from_data"},
+        options={CONF_HA_SENSOR_INDOOR_TEMPERATURE: "sensor.from_options"})
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_CONTROL_MODE_HOME_ASSISTANT: False})
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.options == {CONF_CONTROL_MODE_HOME_ASSISTANT: False, CONF_HA_SENSOR_INDOOR_TEMPERATURE: None}
 
 
 async def test_options_flow_updates_options(hass):
@@ -223,10 +277,8 @@ async def test_options_flow_updates_options(hass):
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
 
-    assert schema_defaults(result) == {
-        CONF_CONTROL_MODE_HOME_ASSISTANT: True,
-        CONF_HA_SENSOR_INDOOR_TEMPERATURE: "sensor.from_options",
-    }
+    assert schema_defaults(result)[CONF_CONTROL_MODE_HOME_ASSISTANT] is True
+    assert schema_suggested_values(result)[CONF_HA_SENSOR_INDOOR_TEMPERATURE] == "sensor.from_options"
 
     user_input = {CONF_CONTROL_MODE_HOME_ASSISTANT: False, CONF_HA_SENSOR_INDOOR_TEMPERATURE: "sensor.living_room"}
     result = await hass.config_entries.options.async_configure(result["flow_id"], user_input)
