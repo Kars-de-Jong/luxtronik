@@ -46,7 +46,7 @@ Running hassfest (see Conventions) currently reports:
 - **Invalid translation key `-1`** in `entity.sensor.switchoff_reason.state` in `strings.json` and `translations/en.json`. State keys must match `[a-z0-9-_]+` and can't start with a hyphen. Map the value `-1` to a valid key (e.g. `unknown`) in the sensor, then rename the translation key.
 
 ### 5. Findings from the best practices review
-- **Use HA translations instead of the own text files.** Device names via `translation_key` on the device info, status sensors as `SensorDeviceClass.ENUM` with translated states, the action texts in the `services` section of `strings.json`, exception translations. `translations/climate.de.json` is not loaded by anything.
+- **Use HA translations instead of the own text files.** Device names via `translation_key` on the device info, status sensors as `SensorDeviceClass.ENUM` with translated states, the action texts in the `services` section of `strings.json`. Exception translations are done for the write action and entity writes; `ConfigEntryNotReady` in `__init__.py` and `UpdateFailed` in `coordinator.py` still use plain messages (`exception-translations`). `translations/climate.de.json` is not loaded by anything.
 - **Icons:** move the `icon` properties to `icons.json` (`icon-translations`).
 - **Extra state attributes** have free-text German keys (`'WP Seit (ID_WEB_Time_WPein_akt)'`, `'EVU first start time'`) and every entity has `Luxtronik_Key`. Prefer snake_case keys, or separate disabled-by-default diagnostic sensors. Breaking for automations that use them.
 - **Config flow:** `FlowResult` is deprecated, use `ConfigFlowResult`; type `async_step_dhcp` with `DhcpServiceInfo`; consider `OptionsFlowWithReload` instead of the update listener.
@@ -60,7 +60,3 @@ Running hassfest (see Conventions) currently reports:
   - The climate entity reads the indoor temperature sensor from `hass.states` only when the coordinator updates. Tracking that sensor's state changes would show changes at once.
   - `homeassistant.update_entity` requests a coordinator refresh, which waits 3 s like the refresh after a write.
   - Debounced writes (the `luxtronik2.write` action and the number entities) run after the call returned, so a device error (lock timeout, unreachable heatpump) is only logged. A repair issue or a persistent notification would make it visible.
-
-## Next quality scale tier (Silver)
-See `quality_scale.yaml` for the full list. The relevant items found so far:
-- **`reauthentication-flow`:** exempt, because there is no authentication.
