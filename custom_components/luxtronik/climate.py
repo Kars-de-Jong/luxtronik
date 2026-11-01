@@ -44,6 +44,14 @@ PARALLEL_UPDATES = 1
 SUPPORT_FLAGS: Final = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
 OPERATION_LIST: Final = [HVACMode.AUTO, HVACMode.OFF]
 
+LUX_MODE_PRESETS: Final = {
+    LuxMode.off: PRESET_NONE,
+    LuxMode.automatic: PRESET_NONE,
+    LuxMode.second_heatsource: PRESET_SECOND_HEATSOURCE,
+    LuxMode.party: PRESET_BOOST,
+    LuxMode.holidays: PRESET_AWAY,
+}
+
 MIN_TEMPERATURE: Final = 40
 MAX_TEMPERATURE: Final = 48
 # endregion Constants
@@ -153,14 +161,8 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
     @property
     def target_temperature(self) -> float:
         """Return the temperature we try to reach."""
-        if self._target_temperature_sensor is None:
-            return self._attr_target_temperature
-        elif self.__is_luxtronik_sensor(self._target_temperature_sensor):
-            self._attr_target_temperature = self._luxtronik.get_value(
-                self._target_temperature_sensor)
-        else:
-            self._attr_target_temperature = self.__get_state_temperature(
-                self._target_temperature_sensor)
+        self._attr_target_temperature = self._luxtronik.get_value(
+            self._target_temperature_sensor)
         return self._attr_target_temperature
 
     def __get_state_temperature(self, entity_id: str) -> float | None:
@@ -178,19 +180,15 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
-        changed = False
         # Writing updates the entities, which reads the target temperature again.
         temperature = kwargs[ATTR_TEMPERATURE]
         self._attr_target_temperature = temperature
-        if self._target_temperature_sensor is not None:
-            if self._target_temperature_parameter_2 is not None:
-                await self.coordinator.async_write(
-                    self._target_temperature_parameter_2.split('.')[1], temperature)
+        if self._target_temperature_parameter_2 is not None:
             await self.coordinator.async_write(
-                self._target_temperature_sensor.split('.')[1], temperature)
-            changed = True
-        if changed:
-            self.async_write_ha_state()
+                self._target_temperature_parameter_2.split('.')[1], temperature)
+        await self.coordinator.async_write(
+            self._target_temperature_sensor.split('.')[1], temperature)
+        self.async_write_ha_state()
     # endregion Temperatures
 
     def _is_heating_on(self) -> bool:
@@ -279,8 +277,6 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
             return LuxMode.party
         elif preset_mode == PRESET_SECOND_HEATSOURCE:
             return LuxMode.second_heatsource
-        elif hvac_mode == HVACMode.AUTO:
-            return LuxMode.automatic
         return LuxMode.automatic
 
     @property
@@ -288,17 +284,7 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
         """Return current preset mode."""
         luxmode = LuxMode[self._luxtronik.get_value(
             self._heater_sensor).lower().replace(' ', '_')]
-        if luxmode == LuxMode.off and self._control_mode_home_assistant and self.hvac_action == HVACAction.IDLE:
-            return self._attr_preset_mode
-        elif luxmode in [LuxMode.off, LuxMode.automatic]:
-            return PRESET_NONE
-        elif luxmode == LuxMode.second_heatsource:
-            return PRESET_SECOND_HEATSOURCE
-        elif luxmode == LuxMode.party:
-            return PRESET_BOOST
-        elif luxmode == LuxMode.holidays:
-            return PRESET_AWAY
-        return PRESET_NONE
+        return LUX_MODE_PRESETS[luxmode]
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set preset mode."""

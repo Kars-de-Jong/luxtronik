@@ -28,6 +28,7 @@ Conventions from the Bronze work:
   - The fields use plain `str`/`int`/`bool`. Selectors would be better, e.g. an `EntitySelector(domain="sensor", device_class="temperature")` for the indoor temperature sensor.
   - The options flow uses step id `user`, reached via `async_step_init`. HA convention is `init`, so the translations would need to move to match.
   - The default indoor temperature sensor is `sensor.luxtronik2_room_temperature`. Since entity IDs are generated from the device name, new installs call the heatpump's room sensor `sensor.heatpump_<serial>_heating_room`, so the default points to an entity that doesn't exist and the climate entity shows no current temperature. Look up the room sensor by unique ID (`<serial>_room_temperature`) instead, or use an `EntitySelector` without a default.
+  - `control_mode_home_assistant` has no effect. The climate entity only read it in a branch that could never run, which was removed. Remove the option (with a config entry migration) or implement what it was meant to do.
   - The `existing_instance_updated` abort string in the translations looks unused.
   - When the DHCP step finds an already configured unique id, it does not update the host of the existing entry. That is the Gold rule `discovery-update-info`.
 
