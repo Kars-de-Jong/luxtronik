@@ -4,7 +4,7 @@ from __future__ import annotations
 from homeassistant.core import HomeAssistant, callback
 
 from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION,
-                    ATTR_STATUS_TEXT, DOMAIN)
+                    ATTR_STATUS_TEXT)
 
 
 @callback
@@ -27,7 +27,6 @@ def exclude_attributes(hass: HomeAssistant) -> set[str]:
         'Abtauen in ID_WEB_Time_AbtIn',
         'ID_WEB_Time_Heissgas',
         'switch_gap',
-        f"sensor.{DOMAIN}_status_time",
         'status raw',
         'EVU first start time',
         'EVU first end time',
