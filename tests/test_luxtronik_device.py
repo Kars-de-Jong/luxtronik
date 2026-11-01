@@ -40,6 +40,15 @@ def test_connect_reads_once():
     lux.return_value.read.assert_not_called()
 
 
+def test_connect_for_migration():
+    """The migration connects without safe mode and with the default lock timeout."""
+    with patch("custom_components.luxtronik.luxtronik_device.Lux") as lux:
+        device = LuxtronikDevice.connect("10.0.0.2", 8889)
+
+    lux.assert_called_once_with("10.0.0.2", 8889, False)
+    assert device._lock_timeout_sec == 30
+
+
 def test_device_has_no_throttled_update():
     """The coordinator reads the heatpump, so the device has no throttled update."""
     assert not hasattr(LuxtronikDevice, "update")
