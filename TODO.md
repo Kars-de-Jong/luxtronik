@@ -56,7 +56,6 @@ Running hassfest (see Conventions) currently reports:
 - **Swallowed keyword arguments:** `LuxtronikSwitch.__init__` takes `*args, **kwargs` and ignores them, so `entity_registry_enabled_default=False` on the `pump_heat_control` switch has no effect and the switch is enabled for new installs. Passing it on would disable the switch by default for new installs only; existing registry entries keep their setting.
 - **Thermal disinfection number:** `_update_attrs` calls `float(self.native_value)`, which raises when the heatpump has no value for the target.
 - **`LuxtronikEntityDescription`** should be `@dataclass(frozen=True, kw_only=True)`.
-- **`setup.cfg`:** mypy targets Python 3.7 with `ignore_errors = true`.
 - **Coordinator follow-ups:**
   - The status sensor builds `status_text` from the states of the status time and status line sensors. They are updated after it, so the text lags one update (30 s) behind. Building it from the device values would fix that.
   - The climate entity reads the indoor temperature sensor from `hass.states` only when the coordinator updates. Tracking that sensor's state changes would show changes at once.
