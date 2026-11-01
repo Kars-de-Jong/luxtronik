@@ -2,6 +2,7 @@
 import threading
 from unittest.mock import MagicMock, patch
 
+import pytest
 from homeassistant.components.diagnostics import REDACTED
 from homeassistant.const import CONF_HOST, CONF_PORT
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -54,3 +55,23 @@ async def test_diagnostics(hass):
     assert diag["entry"]["title"] == REDACTED
     assert list(diag["parameters"].values()) == [REDACTED]
     assert list(diag["calculations"].values()) != [REDACTED]
+
+
+@pytest.mark.parametrize(("host", "lookup"), [
+    ("10.0.0.2", {"ip": "10.0.0.2"}),
+    ("heatpump.local", {"hostname": "heatpump.local"}),
+    ("fe80::1%eth0", {"ip6": "fe80::1"}),
+])
+async def test_diagnostics_mac_vendor(hass, host, lookup):
+    """Only the vendor part of the MAC address of the heatpump is shown."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, version=3, unique_id=SERIAL, data={CONF_HOST: host, CONF_PORT: 8889})
+    entry.add_to_hass(hass)
+
+    with patch("custom_components.luxtronik.diagnostics.Lux", return_value=_client()), \
+            patch("custom_components.luxtronik.diagnostics.get_mac_address",
+                  return_value="AA-BB-CC-DD-EE-FF") as get_mac_address:
+        diag = await async_get_config_entry_diagnostics(hass, entry)
+
+    get_mac_address.assert_called_once_with(**lookup)
+    assert diag["entry"]["data"]["mac"] == "aa:bb:cc:*"
