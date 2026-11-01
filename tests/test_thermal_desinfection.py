@@ -62,3 +62,13 @@ async def test_last_thermal_desinfection_is_restored(hass, freezer):
     freezer.move_to("2026-10-02 10:00:00+00:00")
     entity._update_attrs()
     assert entity.extra_state_attributes[LAST] == dt_util.now()
+
+
+async def test_last_thermal_desinfection_restored_without_time_zone(hass):
+    """Older versions stored the local time without a time zone."""
+    mock_restore_cache(hass, [State(ENTITY_ID, "65.0", {LAST: "2026-10-01T10:00:00"})])
+    entity, _ = _entity(hass, 50.0)
+    await entity.async_added_to_hass()
+
+    assert entity.extra_state_attributes[LAST] == datetime(
+        2026, 10, 1, 10, 0, tzinfo=dt_util.get_default_time_zone())

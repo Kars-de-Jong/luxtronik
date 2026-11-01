@@ -444,3 +444,11 @@ async def test_debounced_write_failure_is_logged(hass, luxtronik, values, caplog
 
     assert len(luxtronik.writes) == 1
     assert "Couldn't write parameter ID_Ba_Hz_akt: lock timeout 30" in caplog.text
+
+
+async def test_number_without_value(hass, luxtronik, values):
+    """A number the heatpump has no value for is unknown."""
+    values["parameters.ID_Einst_LGST_akt"] = None
+    await _setup(hass)
+
+    assert hass.states.get(THERMAL_DESINFECTION).state == "unknown"
