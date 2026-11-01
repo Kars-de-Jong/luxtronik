@@ -138,3 +138,33 @@ async def test_yaml_platform_without_entry(hass, luxtronik, caplog):
 
     assert hass.states.async_entity_ids("sensor") == []
     assert "no luxtronik" in caplog.text
+
+
+async def test_binary_sensor_platform_without_entry(hass, luxtronik, caplog):
+    """Binary sensors configured in YAML are skipped when there is no config entry."""
+    assert await async_setup_component(hass, "binary_sensor", {"binary_sensor": [{
+        "platform": DOMAIN,
+        "sensors": [{"id": "calculations.ID_WEB_EVUin"}],
+    }]})
+    await hass.async_block_till_done()
+
+    assert hass.states.async_entity_ids("binary_sensor") == []
+    assert "no luxtronik" in caplog.text
+
+
+async def test_yaml_sensor_unknown_id(hass, luxtronik, caplog):
+    """A YAML sensor with an ID the heatpump doesn't know is skipped, with a warning."""
+    luxtronik.get_sensor.return_value = None
+    _add_entry(hass)
+    assert await async_setup_component(hass, DOMAIN, {
+        "sensor": [{"platform": DOMAIN, "sensors": [{"id": "calculations.ID_Unknown_1"}]}],
+        "binary_sensor": [{"platform": DOMAIN, "sensors": [{"id": "calculations.ID_Unknown_2"}]}],
+    })
+    await hass.async_block_till_done()
+
+    ent_reg = er.async_get(hass)
+    assert ent_reg.async_get_entity_id("sensor", DOMAIN, f"sensor.{DOMAIN}_ID_Unknown_1") is None
+    assert ent_reg.async_get_entity_id(
+        "binary_sensor", DOMAIN, f"sensor.{DOMAIN}_ID_Unknown_2") is None
+    assert "Invalid Luxtronik ID ID_Unknown_1 in group calculations" in caplog.text
+    assert "Invalid Luxtronik ID ID_Unknown_2 in group calculations" in caplog.text
