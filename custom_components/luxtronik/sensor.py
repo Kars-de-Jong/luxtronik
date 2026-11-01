@@ -24,7 +24,7 @@ from .const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY, ATTR_STATUS_TEXT,
                     LUX_SENSOR_MODE_COOLING,
                     LUX_SENSOR_MODE_HEATING, LUX_SENSOR_STATUS,
                     LUX_SENSOR_STATUS1, LUX_SENSOR_STATUS3, LUX_STATE_ICON_MAP,
-                    LUX_STATES_ON, LUX_STATUS1_HEATPUMP_COMING,
+                    LUX_STATUS1_HEATPUMP_COMING,
                     LUX_STATUS1_HEATPUMP_SHUTDOWN, LUX_STATUS1_WORKAROUND,
                     LUX_STATUS3_WORKAROUND, LUX_STATUS_DOMESTIC_WATER,
                     LUX_STATUS_EVU, LUX_STATUS_HEATING, LUX_STATUS_NO_REQUEST,
@@ -691,7 +691,6 @@ async def async_setup_entry(
 
 class LuxtronikSensor(LuxtronikEntity, SensorEntity, RestoreEntity):
     """Representation of a Luxtronik Sensor."""
-    _attr_is_on = True
     _attr_has_entity_name = True
 
     def __init__(
@@ -793,11 +792,6 @@ class LuxtronikSensor(LuxtronikEntity, SensorEntity, RestoreEntity):
                     return LUX_STATUS_COOLING
 
         return value if value is None or self._factor is None else round(value * self._factor, 2)
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if sensor is on."""
-        return self.native_value in LUX_STATES_ON
 
     @callback
     def _update_attrs(self) -> None:
