@@ -223,10 +223,10 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
         """Return the current mode."""
         new_hvac_action = self._attr_hvac_action
         status = self._luxtronik.get_value(self._status_sensor)
-        if self._is_heating_on():
-            new_hvac_action = HVACAction.HEATING
-        elif status == LUX_STATUS_COOLING:
+        if status == LUX_STATUS_COOLING:
             new_hvac_action = HVACAction.COOLING
+        elif self._is_heating_on():
+            new_hvac_action = HVACAction.HEATING
         elif self.__get_hvac_mode(HVACAction.IDLE) == HVACMode.OFF:
             new_hvac_action = HVACAction.OFF
         else:

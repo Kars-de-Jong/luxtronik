@@ -128,6 +128,7 @@ async def _refresh(hass, entry):
     (HEATING, {LUX_SENSOR_MODE_HEATING: "Off", LUX_SENSOR_STATUS: LUX_STATUS_SWIMMING_POOL_SOLAR},
      HVACAction.OFF),
     (COOLING, {}, HVACAction.IDLE),
+    (COOLING, {LUX_SENSOR_STATUS: LUX_STATUS_COOLING}, HVACAction.COOLING),
 ])
 async def test_hvac_action(hass, values, entity_id, changes, action):
     """The action follows the status of the heatpump and the mode of the circuit."""
