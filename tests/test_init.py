@@ -179,3 +179,21 @@ async def test_device_sw_version_is_a_string(hass, luxtronik, caplog, firmware, 
         (DOMAIN, "2311_1234_abcd_heatpump"), entry.entry_id)
     assert heatpump.sw_version == sw_version
     assert "as sw_version" not in caplog.text
+
+
+@pytest.mark.parametrize(("language", "heatpump", "heating"), [
+    ("en", "Heatpump 2311-1234", "Heating"),
+    ("de", "Wärmepumpe 2311-1234", "Heizung"),
+    ("de-CH", "Wärmepumpe 2311-1234", "Heizung"),
+    ("fr", "Heatpump 2311-1234", "Heating"),
+])
+async def test_device_names_in_language(hass, luxtronik, language, heatpump, heating):
+    """The devices are named in the language of Home Assistant, or else in English."""
+    hass.config.language = language
+    entry = await _setup_entry(hass)
+
+    dev_reg = dr.async_get(hass)
+    assert dev_reg.async_get_device_by_identifier(
+        (DOMAIN, "2311_1234_abcd_heatpump"), entry.entry_id).name == heatpump
+    assert dev_reg.async_get_child_device_by_identifier(
+        (DOMAIN, "2311_1234_abcd_heating"), entry.entry_id).name == heating
