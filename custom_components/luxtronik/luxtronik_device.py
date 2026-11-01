@@ -51,27 +51,22 @@ class LuxtronikDevice:
         return sensor.value
 
     def get_sensor_by_id(self, group_sensor_id: str):
-        """Get a sensor object by id from Luxtronik."""
-        try:
-            group = group_sensor_id.split(".")[0]
-            sensor_id = group_sensor_id.split(".")[1]
-            return self.get_sensor(group, sensor_id)
-        except IndexError as error:
-            LOGGER.critical(group_sensor_id, error, exc_info=True)
+        """Get a sensor object by its id, "<group>.<name or index>", from Luxtronik."""
+        group, _, sensor_id = group_sensor_id.partition(".")
+        return self.get_sensor(group, sensor_id)
 
     def get_sensor(self, group, sensor_id):
-        """Get sensor by configured sensor ID."""
-        sensor = None
-        try:
-            if group == CONF_PARAMETERS:
-                sensor = self._luxtronik.parameters.get(sensor_id)
-            if group == CONF_CALCULATIONS:
-                sensor = self._luxtronik.calculations.get(sensor_id)
-            if group == CONF_VISIBILITIES:
-                sensor = self._luxtronik.visibilities.get(sensor_id)
-        except Exception as err:
-            LOGGER.warning(f"Sensor id not found: {group}.{sensor_id}", err, exc_info=True)
-        return sensor
+        """Get a sensor object by its group and name or index, or None if it's unknown.
+
+        The library logs a warning when it doesn't know the name or index.
+        """
+        if group == CONF_PARAMETERS:
+            return self._luxtronik.parameters.get(sensor_id)
+        if group == CONF_CALCULATIONS:
+            return self._luxtronik.calculations.get(sensor_id)
+        if group == CONF_VISIBILITIES:
+            return self._luxtronik.visibilities.get(sensor_id)
+        return None
 
     @property
     def serial_number(self) -> str:
@@ -98,14 +93,9 @@ class LuxtronikDevice:
         return get_manufacturer_by_model(self.model)
 
     @property
-    def firmware_version(self) -> str:
-        """Return the heatpump firmware version."""
-        return str(self.get_value("calculations.ID_WEB_SoftStand"))
-
-    @property
     def firmware_version_minor(self) -> int:
-        """Return the heatpump firmware minor version."""
-        ver = self.firmware_version
+        """Return the heatpump firmware minor version, e.g. 88 for V3.88.1."""
+        ver = self.get_value("calculations.ID_WEB_SoftStand")
         if ver is None:
             return 0
         return int(re.search(r'\d+', ver.split('.')[1]).group(0))
