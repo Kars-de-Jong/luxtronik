@@ -34,8 +34,6 @@ async def async_get_config_entry_diagnostics(
         mac = mac[:9] + '*'
 
     entry_data = async_redact_data(entry.as_dict(), TO_REDACT)
-    if "data" not in entry_data:
-        entry_data["data"] = {}
     entry_data["data"]["mac"] = mac
     diag_data = {
         "entry": entry_data,
