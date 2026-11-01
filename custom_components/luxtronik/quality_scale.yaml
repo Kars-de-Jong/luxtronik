@@ -40,7 +40,9 @@ rules:
   docs-configuration-parameters: todo
   docs-installation-parameters: todo
   entity-unavailable: done
-  integration-owner: todo
+  integration-owner:
+    status: done
+    comment: Kars de Jong (@kars-de-jong) maintains the legacy branch.
   log-when-unavailable: done
   parallel-updates: done
   reauthentication-flow:
