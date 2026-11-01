@@ -2,6 +2,8 @@
 import socket
 from unittest.mock import patch
 
+import pytest
+
 from custom_components.luxtronik.helpers import lux_helper
 
 REQUEST = b"2000;111;1;\x00"
@@ -97,3 +99,11 @@ def test_discover_nothing():
     assert result is None
     assert len(sockets) == 2
 
+
+@pytest.mark.parametrize("answers", [{}, {4444: [(b"2500;111;8889;", "10.0.0.2")]}])
+def test_discover_closes_sockets(answers):
+    """The sockets are closed after the discovery."""
+    _, sockets = _discover(answers)
+
+    assert sockets
+    assert all(s.closed for s in sockets)
