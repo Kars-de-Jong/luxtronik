@@ -1,7 +1,6 @@
 """Luxtronik heatpump number."""
 # region Imports
 from datetime import date, datetime
-from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
@@ -11,7 +10,6 @@ from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
 from .coordinator import LuxtronikCoordinator
@@ -42,14 +40,6 @@ PARALLEL_UPDATES = 1
 # endregion Constants
 
 # region Setup
-
-
-async def async_setup_platform(
-    hass: HomeAssistant, config: ConfigType,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info: dict[str, Any] = None,
-) -> None:
-    pass
 
 
 async def async_setup_entry(

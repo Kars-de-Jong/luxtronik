@@ -11,7 +11,6 @@ from homeassistant.helpers.device_registry import ChildDeviceInfo
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.typing import ConfigType
 
 from .coordinator import LuxtronikCoordinator
 from .entity import LuxtronikEntity
@@ -50,12 +49,6 @@ MAX_TEMPERATURE: Final = 48
 # endregion Constants
 
 # region Setup
-
-
-async def async_setup_platform(
-    hass: HomeAssistant, config: ConfigType, async_add_entities: AddEntitiesCallback, discovery_info: dict[str, Any] = None,
-) -> None:
-    pass
 
 
 async def async_setup_entry(
