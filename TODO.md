@@ -51,7 +51,7 @@ Running hassfest (see Conventions) currently reports:
 - **Icons:** move the `icon` properties to `icons.json` (`icon-translations`).
 - **Extra state attributes** have free-text German keys (`'WP Seit (ID_WEB_Time_WPein_akt)'`, `'EVU first start time'`) and every entity has `Luxtronik_Key`. Prefer snake_case keys, or separate disabled-by-default diagnostic sensors. Breaking for automations that use them.
 - **Config flow:** `FlowResult` is deprecated, use `ConfigFlowResult`; type `async_step_dhcp` with `DhcpServiceInfo`; consider `OptionsFlowWithReload` instead of the update listener.
-- **Dead code:** the `EVENT_HOMEASSISTANT_STOP` listener calls a no-op `disconnect()`; `f"sensor.{DOMAIN}_status_time"` in `recorder.py` is an entity ID in a list of attribute names.
+- **Dead code:** `f"sensor.{DOMAIN}_status_time"` in `recorder.py` is an entity ID in a list of attribute names.
 - **Logging:** setup logs the full config entry at `info` level; f-strings in log calls; `LOGGER.critical(group_sensor_id, error)` in `get_sensor_by_id` has no format string.
 - **`manifest.json`:** `after_dependencies: ["http"]` looks unused.
 - **`LuxtronikEntityDescription`** should be `@dataclass(frozen=True, kw_only=True)`.

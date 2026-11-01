@@ -686,21 +686,6 @@ async def async_setup_entry(
 
     async_add_entities(entities)
 
-# async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-#     """Unloading the Luxtronik platforms."""
-#     luxtronik = hass.data[DOMAIN]
-#     if luxtronik is None:
-#         return
-
-#     await hass.async_add_executor_job(luxtronik.disconnect)
-
-#     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-#     if unload_ok:
-#         hass.data[DOMAIN] = None
-
-#     return unload_ok
-
-
 # endregion Setup
 
 

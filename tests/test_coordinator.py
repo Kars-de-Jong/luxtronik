@@ -137,4 +137,3 @@ async def test_unload_stops_reading(hass, luxtronik):
     luxtronik.read.assert_not_called()
     fetch.assert_not_called()
     assert not coordinator._listeners
-    luxtronik.disconnect.assert_called_once_with()

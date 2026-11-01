@@ -43,10 +43,6 @@ class LuxtronikDevice:
         """Connect to heatpump."""
         return LuxtronikDevice(host, port, False, 30)
 
-    def disconnect(self):
-        """Disconnect from Luxtronik. - Nothing todo - disconnected after every read!"""
-        pass
-
     def get_value(self, group_sensor_id: str):
         """Get a sensor value from Luxtronik."""
         sensor = self.get_sensor_by_id(group_sensor_id)

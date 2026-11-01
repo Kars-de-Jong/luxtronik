@@ -10,9 +10,8 @@ import voluptuous as vol
 from homeassistant.config import config_per_platform
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (ATTR_CONFIG_ENTRY_ID, CONF_BINARY_SENSORS, CONF_ENTITY_NAMESPACE, CONF_HOST, CONF_ID,
-                                 CONF_PORT, CONF_SCAN_INTERVAL, CONF_SENSORS,
-                                 EVENT_HOMEASSISTANT_STOP, Platform)
-from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
+                                 CONF_PORT, CONF_SCAN_INTERVAL, CONF_SENSORS, Platform)
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -87,14 +86,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: LuxtronikConfigEn
     )
 
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
-
-    def logout_luxtronik(event: Event) -> None:
-        """Close connections to this heatpump."""
-        luxtronik.disconnect()
-
-    config_entry.async_on_unload(
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, logout_luxtronik)
-    )
     return True
 
 
@@ -299,12 +290,7 @@ async def async_unload_entry(hass: HomeAssistant, config_entry: LuxtronikConfigE
     """Unloading the Luxtronik platforms."""
     LOGGER.info("async_unload_entry '%s'", config_entry)
 
-    unload_ok = await hass.config_entries.async_unload_platforms(
-        config_entry, PLATFORMS
-    )
-    if unload_ok:
-        await hass.async_add_executor_job(config_entry.runtime_data.device.disconnect)
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(config_entry, PLATFORMS)
 
 
 def build_device_info(
