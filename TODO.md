@@ -53,6 +53,8 @@ Running hassfest (see Conventions) currently reports:
 - **Config flow:** `FlowResult` is deprecated, use `ConfigFlowResult`; type `async_step_dhcp` with `DhcpServiceInfo`; consider `OptionsFlowWithReload` instead of the update listener.
 - **Logging:** setup logs the full config entry at `info` level; f-strings in log calls.
 - **`manifest.json`:** `after_dependencies: ["http"]` looks unused.
+- **Swallowed keyword arguments:** `LuxtronikSwitch.__init__` takes `*args, **kwargs` and ignores them, so `entity_registry_enabled_default=False` on the `pump_heat_control` switch has no effect and the switch is enabled for new installs. Passing it on would disable the switch by default for new installs only; existing registry entries keep their setting.
+- **Thermal disinfection number:** `_update_attrs` calls `float(self.native_value)`, which raises when the heatpump has no value for the target.
 - **`LuxtronikEntityDescription`** should be `@dataclass(frozen=True, kw_only=True)`.
 - **`setup.cfg`:** mypy targets Python 3.7 with `ignore_errors = true`.
 - **Coordinator follow-ups:**
