@@ -19,12 +19,20 @@ def test_sensor_value_text():
         "de", "luxtronik2__status_line_1", "heatpump running") == "Die Wärmepumpe läuft"
 
 
+def test_unknown_sensor_value_text(caplog):
+    """An unknown status value is shown as it is, with a warning."""
+    assert helper.get_sensor_value_text(
+        "en", "luxtronik2__status_line_1", "no such value") == "no such value"
+    assert "no such value not found" in caplog.text
+
+
 def test_missing_text_file(caplog):
     """A missing text file is logged and gives no texts."""
     helper._load_lang_from_file.cache_clear()
     try:
-        helper.get_sensor_value_text(
-            "en", "luxtronik2__status_line_1", "heatpump running", platform="missing")
+        assert helper.get_sensor_value_text(
+            "en", "luxtronik2__status_line_1", "heatpump running", platform="missing"
+        ) == "heatpump running"
     finally:
         helper._load_lang_from_file.cache_clear()
     assert "file not found" in caplog.text

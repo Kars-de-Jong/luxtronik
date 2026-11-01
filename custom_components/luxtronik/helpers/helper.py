@@ -80,7 +80,7 @@ def get_sensor_value_text(
         value,
         content,
     )
-    return key.replace("_", " ").title()
+    return value
 
 
 def get_yaml_unique_id(sensor_key: str) -> str:
