@@ -51,14 +51,50 @@ def _state(hass):
     return hass.states.get(entity_id)
 
 
-async def test_release_url(hass, luxtronik, installed, aioclient_mock):
-    """The update entity links to the manufacturer firmware download page."""
-    luxtronik.model = "LWP"
+@pytest.mark.parametrize(("model", "layout"), [
+    ("LWP", 1),
+    ("LD 7", 2),
+    ("CB 9", 3),
+    ("XYZ", 0),
+    (None, 0),
+])
+async def test_release_url(hass, luxtronik, installed, aioclient_mock, model, layout):
+    """The update entity links to the firmware download page of the manufacturer."""
+    luxtronik.model = model
     aioclient_mock.get(PORTAL_URL, headers=DISPOSITION)
     await _setup(hass)
 
     assert _state(hass).attributes[ATTR_RELEASE_URL] == (
-        "https://www.heatpump24.com/DownloadArea.php?layout=1")
+        f"https://www.heatpump24.com/DownloadArea.php?layout={layout}")
+
+
+@pytest.mark.parametrize(("version", "download_id"), [
+    ("V1.70", 0),
+    ("V2.88.0", 1),
+    ("V3.85.2", 2),
+    ("V4.01", 3),
+    ("F1.2.3", 4),
+    ("WWB1.1", 5),
+    ("smo 4.1", 6),
+])
+async def test_release_notes(
+    hass, hass_ws_client, luxtronik, installed, aioclient_mock, version, download_id
+):
+    """The release notes link to the download page and to the firmware for the version."""
+    luxtronik.model = "LWP"
+    installed[FIRMWARE_KEY] = version
+    aioclient_mock.get(f"{DOWNLOAD_PORTAL_URL}{download_id}", headers=DISPOSITION)
+    await _setup(hass)
+
+    client = await hass_ws_client(hass)
+    await client.send_json(
+        {"id": 1, "type": "update/release_notes", "entity_id": _state(hass).entity_id})
+    result = await client.receive_json()
+
+    assert result["success"]
+    notes = result["result"]
+    assert 'href="https://www.heatpump24.com/DownloadArea.php?layout=1"' in notes
+    assert f'href="{DOWNLOAD_PORTAL_URL}{download_id}"' in notes
 
 
 async def test_latest_version_from_portal(hass, luxtronik, installed, aioclient_mock):
@@ -94,9 +130,10 @@ async def test_up_to_date(hass, luxtronik, installed, aioclient_mock):
     assert _state(hass).state == STATE_OFF
 
 
-async def test_unknown_model(hass, luxtronik, installed, aioclient_mock):
+@pytest.mark.parametrize("version", ["X9.1", None])
+async def test_unknown_model(hass, luxtronik, installed, aioclient_mock, version):
     """Without a download portal for the firmware, the latest version is unknown."""
-    installed[FIRMWARE_KEY] = "X9.1"
+    installed[FIRMWARE_KEY] = version
     await _setup(hass)
 
     assert aioclient_mock.call_count == 0
