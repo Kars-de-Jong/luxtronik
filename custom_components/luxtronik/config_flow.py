@@ -61,19 +61,19 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         broadcast_discover_ip, broadcast_discover_port = broadcast_result
         if broadcast_discover_ip != discovery_info.ip:
             return self.async_abort(reason="not_luxtronik_device")
+        # Old firmware doesn't send its port in the broadcast answer.
+        port = DEFAULT_PORT if broadcast_discover_port is None else broadcast_discover_port
 
         try:
             luxtronik = await self.hass.async_add_executor_job(
-                LuxtronikDevice.connect, broadcast_discover_ip, broadcast_discover_port)
+                LuxtronikDevice.connect, broadcast_discover_ip, port)
         except OSError:
             return self.async_abort(reason="cannot_connect")
         await self.async_set_unique_id(luxtronik.unique_id)
         self._abort_if_unique_id_configured()
 
         self._discovery_host = discovery_info.ip
-        self._discovery_port = (
-            DEFAULT_PORT if broadcast_discover_port is None else broadcast_discover_port
-        )
+        self._discovery_port = port
         return await self.async_step_user()
 
     async def _show_setup_form(

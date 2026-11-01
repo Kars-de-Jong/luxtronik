@@ -184,6 +184,7 @@ async def test_dhcp_flow_uses_default_port(hass, mock_connect, device):
 
     assert result["type"] == FlowResultType.FORM
     assert schema_defaults(result)[CONF_PORT] == DEFAULT_PORT
+    mock_connect.assert_called_once_with(HOST, DEFAULT_PORT)
 
 
 async def test_dhcp_flow_aborts_when_unique_id_configured(hass, mock_connect, device):
