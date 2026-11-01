@@ -38,7 +38,6 @@ Conventions from the Bronze work:
 - The tests trigger flake8 E128 warnings (continuation indent of the import blocks), and there is one E302 in `tests/test_init.py`. CI only fails on E9/F63/F7/F82.
 - `setup.cfg` sets `max-line-length = 88` but ignores E501.
 - `tests/test_entity_naming.py` defines its own `SERIAL` while `tests/conftest.py` also has one.
-- Coverage counts only function bodies in `custom_components`, because modules are imported before coverage starts, so module-level lines aren't measured.
 - Consider adding the `home-assistant/actions/hassfest` GitHub Action to `.github/workflows/validate.yaml` to validate `manifest.json` and `quality_scale.yaml`. Fix the errors in item 4 first, or the job fails.
 
 ### 4. hassfest errors
