@@ -2,6 +2,7 @@
 # region Imports
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -24,6 +25,7 @@ from .const import (
     ATTR_PARAMETER,
     ATTR_VALUE,
     CONF_GROUP,
+    CONF_HA_SENSOR_INDOOR_TEMPERATURE,
     CONF_LOCK_TIMEOUT,
     CONF_SAFE,
     CONF_UPDATE_IMMEDIATELY_AFTER_WRITE,
@@ -353,7 +355,12 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
         await _async_migrate_unique_ids(hass, config_entry)
         hass.config_entries.async_update_entry(config_entry, version=3)
 
-    LOGGER.info("Migration to version %s successful", config_entry.version)
+    if config_entry.version == 3 and config_entry.minor_version < 2:
+        _migrate_indoor_temperature_sensor(hass, config_entry)
+        hass.config_entries.async_update_entry(config_entry, minor_version=2)
+
+    LOGGER.info("Migration to version %s.%s successful",
+                config_entry.version, config_entry.minor_version)
 
     return True
 
@@ -412,3 +419,27 @@ async def _async_migrate_unique_ids(hass: HomeAssistant, config_entry: ConfigEnt
         return {"new_unique_id": new_unique_id}
 
     await er.async_migrate_entries(hass, config_entry.entry_id, _migrate)
+
+
+def _migrate_indoor_temperature_sensor(hass: HomeAssistant, config_entry: ConfigEntry):
+    """Replace the old default indoor temperature sensor with the room sensor of the heatpump.
+
+    The old default, "sensor.luxtronik2_room_temperature", only exists on installations
+    that kept the legacy entity id. Elsewhere the room sensor is found by its unique id,
+    and without one the indoor temperature sensor is cleared.
+    """
+    legacy_sensor = f"sensor.{DOMAIN}_room_temperature"
+    ent_reg = er.async_get(hass)
+    if ent_reg.async_get(legacy_sensor) is not None:
+        return
+    room_sensor = ent_reg.async_get_entity_id(
+        "sensor", DOMAIN, f"{config_entry.unique_id}_room_temperature")
+
+    def _replace(settings: Mapping[str, Any]) -> dict[str, Any]:
+        if settings.get(CONF_HA_SENSOR_INDOOR_TEMPERATURE) != legacy_sensor:
+            return {**settings}
+        return {**settings, CONF_HA_SENSOR_INDOOR_TEMPERATURE: room_sensor}
+
+    LOGGER.debug("Migrating indoor temperature sensor '%s' -> '%s'", legacy_sensor, room_sensor)
+    hass.config_entries.async_update_entry(
+        config_entry, data=_replace(config_entry.data), options=_replace(config_entry.options))

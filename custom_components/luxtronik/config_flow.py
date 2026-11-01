@@ -35,6 +35,7 @@ class LuxtronikFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a Luxtronik heatpump controller config flow."""
 
     VERSION = 3
+    MINOR_VERSION = 2
     _discovery_host = None
     _discovery_port = None
 
