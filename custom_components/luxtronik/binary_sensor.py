@@ -306,6 +306,4 @@ class LuxtronikBinarySensor(LuxtronikEntity, BinarySensorEntity, RestoreEntity):
         """Return the icon to be used for this entity."""
         if not self.is_on and self._icon_off is not None:
             return self._icon_off
-        if self._attr_icon is None:
-            super().icon
         return self._attr_icon
