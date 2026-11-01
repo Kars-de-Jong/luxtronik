@@ -205,3 +205,22 @@ async def test_evu_lock_times_restored(hass, values):
 
     attributes = _state(hass, "status").attributes
     assert [attributes[key] for key in EVU_TIMES] == times
+
+
+async def test_evu_lock_start_without_known_end(hass, values, freezer):
+    """A lock that starts while the end of the first lock is unknown is stored.
+
+    This happens when Home Assistant wasn't running when the first lock ended.
+    """
+    mock_restore_cache(hass, [State(
+        "sensor.heatpump_2311_1234_status", LUX_STATUS_NO_REQUEST,
+        dict(zip(EVU_TIMES, ["11:00", "", "", ""])))])
+    freezer.move_to("2026-10-01 16:00:00+00:00")
+    entry = await _setup(hass)
+    await _refresh(hass, entry)
+
+    attributes = await _status_at(
+        hass, freezer, entry, values, "2026-10-01 17:00:00+00:00", LUX_STATUS_EVU)
+
+    assert _state(hass, "status").state == LUX_STATUS_EVU
+    assert attributes["EVU first start time"] == "17:00"
