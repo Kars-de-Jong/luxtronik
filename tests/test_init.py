@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
@@ -197,3 +198,19 @@ async def test_device_names_in_language(hass, luxtronik, language, heatpump, hea
         (DOMAIN, "2311_1234_abcd_heatpump"), entry.entry_id).name == heatpump
     assert dev_reg.async_get_child_device_by_identifier(
         (DOMAIN, "2311_1234_abcd_heating"), entry.entry_id).name == heating
+
+
+async def test_heatpump_entities_are_added_to_the_heatpump_device(hass, luxtronik, caplog):
+    """The entities of the heatpump are added with its device info.
+
+    Since Home Assistant 2026.11 the device registry iterates connections that
+    are set, so connections=None failed for every entity with that device info.
+    """
+    entry = await _setup_entry(hass)
+
+    device_info = entry.runtime_data.device_info
+    assert "connections" not in device_info
+    heatpump = dr.async_get(hass).async_get_device_by_identifier(
+        (DOMAIN, "2311_1234_abcd_heatpump"), entry.entry_id)
+    assert er.async_entries_for_device(er.async_get(hass), heatpump.id)
+    assert "error adding device" not in caplog.text
