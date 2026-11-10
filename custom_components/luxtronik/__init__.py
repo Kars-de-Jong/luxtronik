@@ -321,7 +321,6 @@ def build_device_info(
 
     )
     LOGGER.debug("build_device_info '%s'", device_info)
-    LOGGER.debug("set_device_info '%s'", set(device_info))
     return device_info
 
 
