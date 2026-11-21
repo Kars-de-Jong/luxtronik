@@ -1,17 +1,10 @@
 {
   "domain": "luxtronik2",
   "name": "Luxtronik",
-  "version": "2023.9.10",
-  "integration_type": "hub",
-  "config_flow": true,
-  "iot_class": "local_polling",
-  "quality_scale": "bronze",
-  "documentation": "https://github.com/Kars-de-Jong/luxtronik",
-  "issue_tracker": "https://github.com/Kars-de-Jong/luxtronik/issues",
-  "dependencies": [],
   "after_dependencies": ["http"],
   "codeowners": ["@bouni", "@benpru", "@kars-de-jong"],
-  "requirements": ["luxtronik==0.3.14", "getmac>=0.8.2"],
+  "config_flow": true,
+  "dependencies": [],
   "dhcp": [
     {
       "macaddress": "000E8C*"
@@ -28,5 +21,12 @@
     {
       "hostname": "wp-novelan"
     }
-  ]
+  ],
+  "documentation": "https://github.com/Kars-de-Jong/luxtronik",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Kars-de-Jong/luxtronik/issues",
+  "quality_scale": "bronze",
+  "requirements": ["luxtronik==0.3.14", "getmac>=0.8.2"],
+  "version": "2023.9.10"
 }
