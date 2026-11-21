@@ -11,6 +11,8 @@ from custom_components.luxtronik.config_flow import (LuxtronikFlowHandler,
 
 COMPONENT = Path(__file__).parent.parent / "custom_components" / "luxtronik"
 TRANSLATIONS = ["translations/en.json", "translations/de.json"]
+# The state keys that hassfest accepts.
+STATE_KEY = re.compile(r"^(?!.+[_-]{2})(?![_-])[a-z0-9-_]+(?<![_-])$")
 
 
 def _load(name):
@@ -64,3 +66,16 @@ def test_exceptions_translated():
 
 def _placeholders(message):
     return set(re.findall(r"{(\w+)}", message))
+
+
+@pytest.mark.parametrize("filename", ["strings.json", "translations/en.json"])
+def test_entity_state_keys_valid(filename):
+    """hassfest accepts every state key of the entity translations."""
+    invalid = [
+        f"{platform}.{entity}.{key}"
+        for platform, entities in _load(filename)["entity"].items()
+        for entity, translation in entities.items()
+        for key in translation.get("state", {})
+        if not STATE_KEY.match(key)
+    ]
+    assert invalid == []

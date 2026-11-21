@@ -201,7 +201,7 @@
             "9": "no request",
             "11": "flow rate",
             "18": "Switching cycle lock",
-            "-1": "Unknown switchoff"
+            "unknown_switchoff": "Unknown switchoff"
         }
       },
       "error_reason": {

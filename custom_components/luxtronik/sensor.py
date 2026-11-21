@@ -415,6 +415,7 @@ async def async_setup_entry(
             state_class=None,
             device_class=None,
             extra_value_attributes=["code"],
+            state_map={"-1": "unknown_switchoff"},
         ),
         LuxtronikIndexStatusSensor(
             key_index="calculations.ID_WEB_AnzahlFehlerInSpeicher",
@@ -814,12 +815,15 @@ class LuxtronikIndexStatusSensor(LuxtronikSensor):
     # _min_index = 0
     # _max_index = 4
 
-    def __init__(self, key_index: str, key_timestamp_template: str, extra_value_attributes: list = None, *args, **kwargs) -> None:
+    def __init__(self, key_index: str, key_timestamp_template: str, extra_value_attributes: list = None,
+                 state_map: dict[str, str] | None = None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._key_index = key_index
         self._key_timestamp_template = key_timestamp_template
         self._key_template = self._sensor_key
         self._extra_value_attributes = extra_value_attributes
+        # Maps codes to states, for codes that aren't valid state translation keys.
+        self._state_map = state_map or {}
         self._update_sensor_keys()
 
     def _update_sensor_keys(self):
@@ -851,7 +855,7 @@ class LuxtronikIndexStatusSensor(LuxtronikSensor):
         if self._extra_value_attributes is not None:
             for attr in self._extra_value_attributes:
                 self._attr_extra_state_attributes[attr] = value
-        return value
+        return self._state_map.get(value, value)
 
         # um ID_Switchoff_file_n_1 /
         # weil ID_Switchoff_index --> ID_Switchoff_file_n_0 0 1 2 3 4

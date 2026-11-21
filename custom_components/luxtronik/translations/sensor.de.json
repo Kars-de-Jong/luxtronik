@@ -133,7 +133,7 @@
       "9": "Keine Anforderung",
       "11": "Durchfluss-W\u00e4rmequelle",
       "18": "Schaltspielsperre",
-      "-1": "Unbekannte Abschaltung"
+      "unknown_switchoff": "Unbekannte Abschaltung"
     }
   }
 }

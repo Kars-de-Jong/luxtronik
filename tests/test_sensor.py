@@ -224,3 +224,24 @@ async def test_evu_lock_start_without_known_end(hass, values, freezer):
 
     assert _state(hass, "status").state == LUX_STATUS_EVU
     assert attributes["EVU first start time"] == "17:00"
+
+
+@pytest.mark.parametrize(("code", "state"), [(-1, "unknown_switchoff"), (11, "11")])
+async def test_switchoff_reason(hass, values, code, state):
+    """The switchoff reason shows the code, with a valid state for the unknown code -1."""
+    values["parameters.ID_Switchoff_file_0_0"] = code
+    await _setup(hass)
+
+    switchoff_reason = _state(hass, "switchoff_reason")
+    assert switchoff_reason.state == state
+    assert switchoff_reason.attributes["code"] == str(code)
+
+
+async def test_error_reason_unknown_code(hass, values):
+    """The error reason keeps the code -1 as its state."""
+    values["calculations.ID_WEB_ERROR_Nr0"] = -1
+    await _setup(hass)
+
+    error_reason = _state(hass, "error_reason")
+    assert error_reason.state == "-1"
+    assert error_reason.attributes["code"] == "-1"
