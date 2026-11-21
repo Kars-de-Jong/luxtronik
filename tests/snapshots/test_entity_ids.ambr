@@ -414,7 +414,7 @@
     tuple(
       'sensor',
       '2311_1234_abcd_status',
-      'sensor.heatpump_2311_1234_status',
+      'sensor.heatpump_2311_1234',
     ),
     tuple(
       'sensor',

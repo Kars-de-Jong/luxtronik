@@ -200,7 +200,7 @@ async def test_evu_lock_times_restored(hass, values):
     """The learned lock times are restored after a restart."""
     times = ["11:00", "13:00", "", ""]
     mock_restore_cache(hass, [State(
-        "sensor.heatpump_2311_1234_status", LUX_STATUS_NO_REQUEST, dict(zip(EVU_TIMES, times)))])
+        "sensor.heatpump_2311_1234", LUX_STATUS_NO_REQUEST, dict(zip(EVU_TIMES, times)))])
     await _setup(hass)
 
     attributes = _state(hass, "status").attributes
@@ -213,7 +213,7 @@ async def test_evu_lock_start_without_known_end(hass, values, freezer):
     This happens when Home Assistant wasn't running when the first lock ended.
     """
     mock_restore_cache(hass, [State(
-        "sensor.heatpump_2311_1234_status", LUX_STATUS_NO_REQUEST,
+        "sensor.heatpump_2311_1234", LUX_STATUS_NO_REQUEST,
         dict(zip(EVU_TIMES, ["11:00", "", "", ""])))])
     freezer.move_to("2026-10-01 16:00:00+00:00")
     entry = await _setup(hass)

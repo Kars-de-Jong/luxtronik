@@ -16,7 +16,7 @@ from custom_components.luxtronik2.entity import UNRECORDED_ATTRIBUTES
 
 from .conftest import SERIAL
 
-STATUS = "sensor.heatpump_2311_1234_status"
+STATUS = "sensor.heatpump_2311_1234"
 
 
 @pytest.fixture

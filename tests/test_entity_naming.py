@@ -1,6 +1,7 @@
 """Test entity naming and the unique_id migration with a mocked heatpump."""
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -35,6 +36,41 @@ async def test_new_install_names(hass, luxtronik):
 
     entity_id = ent_reg.async_get_entity_id("climate", DOMAIN, f"{SERIAL}_heating")
     assert hass.states.get(entity_id).name == "Heating"
+
+
+async def test_status_is_main_feature(hass, luxtronik):
+    """The status sensor takes the device name, and its states are still translated."""
+    entry = await _setup(hass, version=3)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    ent_reg = er.async_get(hass)
+    entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{SERIAL}_status")
+    assert entity_id == "sensor.heatpump_2311_1234"
+    registry_entry = ent_reg.async_get(entity_id)
+    assert registry_entry.translation_key == "status"
+    assert registry_entry.has_entity_name
+
+    device = dr.async_get(hass).async_get(registry_entry.device_id)
+    assert hass.states.get(entity_id).name == device.name == "Heatpump 2311-1234"
+
+
+async def test_status_keeps_registered_entity_id(hass, luxtronik):
+    """An existing status sensor keeps its entity_id now that it takes the device name."""
+    entry = await _setup(hass, version=3)
+    ent_reg = er.async_get(hass)
+    ent_reg.async_get_or_create(
+        "sensor", DOMAIN, f"{SERIAL}_status", config_entry=entry,
+        suggested_object_id=f"{DOMAIN}_status")
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert ent_reg.async_get_entity_id("sensor", DOMAIN, f"{SERIAL}_status") == f"sensor.{DOMAIN}_status"
+    state = hass.states.get(f"sensor.{DOMAIN}_status")
+    assert state is not None
+    assert state.name == "Heatpump 2311-1234"
+    assert hass.states.get("sensor.heatpump_2311_1234") is None
 
 
 async def test_migration_keeps_entity_ids(hass, luxtronik):

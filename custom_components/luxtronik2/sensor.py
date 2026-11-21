@@ -906,6 +906,10 @@ class LuxtronikFlowOutStatusSensor(LuxtronikSensor, RestoreEntity):
 class LuxtronikStatusSensor(LuxtronikSensor, RestoreEntity):
     """Luxtronik Status Sensor with extended attr."""
 
+    # The main feature of the heatpump: the entity takes the device name. The
+    # translation_key "status" stays, because it translates the states.
+    _attr_name = None
+
     _last_state: str = None
 
     _first_evu_start_time: time = None
