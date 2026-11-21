@@ -331,9 +331,12 @@ class LuxtronikNumberThermalDesinfection(LuxtronikNumber, RestoreEntity):
     @callback
     def _update_attrs(self) -> None:
         """Store the date when the domestic water reaches the disinfection target."""
-        domesticWaterCurrent = float(self._luxtronik.get_value(LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE))
+        domesticWaterCurrent = self._luxtronik.get_value(LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE)
+        target = self.native_value
+        if domesticWaterCurrent is None or target is None:
+            return
         now = dt_util.now()
-        if domesticWaterCurrent >= float(self.native_value) and (
+        if float(domesticWaterCurrent) >= float(target) and (
             self._last_thermal_desinfection is None
             or self._last_thermal_desinfection < now.date()
         ):

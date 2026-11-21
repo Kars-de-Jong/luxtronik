@@ -52,7 +52,6 @@ Running hassfest (see Conventions) currently reports:
 - **Logging:** setup logs the full config entry at `info` level; f-strings in log calls.
 - **`manifest.json`:** `after_dependencies: ["http"]` looks unused.
 - **Swallowed keyword arguments:** `LuxtronikSwitch.__init__` takes `*args, **kwargs` and ignores them, so `entity_registry_enabled_default=False` on the `pump_heat_control` switch has no effect and the switch is enabled for new installs. Passing it on would disable the switch by default for new installs only; existing registry entries keep their setting.
-- **Thermal disinfection number:** `_update_attrs` calls `float(self.native_value)`, which raises when the heatpump has no value for the target.
 - **`LuxtronikEntityDescription`** should be `@dataclass(frozen=True, kw_only=True)`.
 - **Type checking (`strict-typing`, Platinum):** nothing type checks the code. Home Assistant core runs mypy in CI and pre-commit, with strict settings for the modules in `.strict-typing`; see its `mypy.ini`. To follow that:
   - Add mypy to `requirements.test.txt` and a CI step, with a configuration based on core's `mypy.ini`.

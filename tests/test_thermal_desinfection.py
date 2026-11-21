@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
+import pytest
+
 from homeassistant.core import State
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import mock_restore_cache
@@ -46,6 +48,20 @@ async def test_last_thermal_desinfection_updates_once_per_day(hass, freezer):
     entity._update_attrs()
     assert entity.extra_state_attributes[LAST] == datetime.fromisoformat("2026-10-02 10:00:00+00:00")
 
+
+
+@pytest.mark.parametrize("missing", [TARGET_KEY, LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE])
+async def test_last_thermal_desinfection_without_value(hass, freezer, missing):
+    """Without a target or current temperature the stored disinfection is kept."""
+    entity, values = _entity(hass, 66.0)
+    freezer.move_to("2026-10-01 10:00:00+00:00")
+    entity._update_attrs()
+    first = entity.extra_state_attributes[LAST]
+
+    values[missing] = None
+    freezer.move_to("2026-10-02 10:00:00+00:00")
+    entity._update_attrs()
+    assert entity.extra_state_attributes[LAST] == first
 
 async def test_last_thermal_desinfection_is_restored(hass, freezer):
     """The restored value is a date again, so the next disinfection is stored."""
