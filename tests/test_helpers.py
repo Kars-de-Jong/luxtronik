@@ -1,5 +1,5 @@
 """Test the fallbacks of the text helpers."""
-from custom_components.luxtronik.helpers import helper
+from custom_components.luxtronik2.helpers import helper
 
 
 def test_sensor_text_without_language():

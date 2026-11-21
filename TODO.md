@@ -2,14 +2,14 @@
 
 These issues came up while bringing the integration to the Home Assistant Integration Quality Scale **Bronze** tier (commits `1ca89f7`..`e15d33c` on `legacy`). None of them was fixed in that work.
 
-Paths are relative to `custom_components/luxtronik/` unless noted otherwise. Line numbers are as of commit `e15d33c`, so verify them before editing.
+Paths are relative to `custom_components/luxtronik2/` unless noted otherwise. Line numbers are as of commit `e15d33c`, so verify them before editing.
 
 Conventions from the Bronze work:
 - **One commit per fix.**
 - **Write the failing test first.** Run tests with `.venv/bin/pytest` and lint with `.venv/bin/flake8 . --count --select=E9,F63,F7,F82 --exclude=.venv`.
-- **Use the shared test fixtures.** `tests/conftest.py` has a `luxtronik` fixture: a MagicMock device patched over `custom_components.luxtronik.LuxtronikDevice`.
+- **Use the shared test fixtures.** `tests/conftest.py` has a `luxtronik` fixture: a MagicMock device patched over `custom_components.luxtronik2.LuxtronikDevice`.
 - **Update `quality_scale.yaml`** when a fix completes a quality scale rule.
-- **Validate with hassfest** after changes to `manifest.json`, `strings.json`, `translations/`, `services.yaml` or `quality_scale.yaml`: `docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest` from the repository root. This is the image the `home-assistant/actions/hassfest` GitHub Action uses, which runs in the `validate-hassfest` job of `.github/workflows/validate.yaml`. It currently reports the error listed in item 4, so that job fails; a fix must not add new ones.
+- **Validate with hassfest** after changes to `manifest.json`, `strings.json`, `translations/`, `services.yaml` or `quality_scale.yaml`: `docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest` from the repository root. This is the image the `home-assistant/actions/hassfest` GitHub Action uses, which runs in the `validate-hassfest` job of `.github/workflows/validate.yaml`. It should report no errors, and a fix must not add any.
 
 ## Improvements
 
@@ -39,11 +39,7 @@ Conventions from the Bronze work:
 - `tests/test_entity_naming.py` defines its own `SERIAL` while `tests/conftest.py` also has one.
 - `strings.json` and `translations/en.json` differ: `entity.sensor.error_reason.state` has 73 keys in `strings.json` but only 3 in `en.json`. `tests/test_translations.py` only compares `config`, `options` and `exceptions`, so nothing catches this.
 
-### 4. hassfest errors
-Running hassfest (see Conventions) currently reports the error below. Until it is fixed or accepted, the `validate-hassfest` CI job fails.
-- **Domain does not match the directory name.** The domain is `luxtronik2`, the directory is `luxtronik`. Renaming either one is a breaking change (entity IDs, config entries, the `luxtronik2.write` action, YAML config), inherited from upstream. Decide whether to fix it with a migration or accept this error.
-
-### 5. Findings from the best practices review
+### 4. Findings from the best practices review
 - **Use HA translations instead of the own text files.** Device names via `translation_key` on the device info, status sensors as `SensorDeviceClass.ENUM` with translated states, the action texts in the `services` section of `strings.json`. Exception translations are done for the write action and entity writes; `ConfigEntryNotReady` in `__init__.py` and `UpdateFailed` in `coordinator.py` still use plain messages (`exception-translations`). `translations/climate.de.json` is not loaded by anything.
 - **Icons:** move the `icon` properties to `icons.json` (`icon-translations`).
 - **Extra state attributes** have free-text German keys (`'WP Seit (ID_WEB_Time_WPein_akt)'`, `'EVU first start time'`) and every entity has `Luxtronik_Key`. Prefer snake_case keys, or separate disabled-by-default diagnostic sensors. Breaking for automations that use them.

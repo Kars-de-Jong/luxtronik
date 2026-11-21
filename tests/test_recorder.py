@@ -9,10 +9,10 @@ from pytest_homeassistant.components.recorder.common import (
     async_wait_recording_done,
 )
 
-from custom_components.luxtronik.const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
+from custom_components.luxtronik2.const import (ATTR_EXTRA_STATE_ATTRIBUTE_LUXTRONIK_KEY,
                                               ATTR_STATUS_TEXT, CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN)
-from custom_components.luxtronik.entity import UNRECORDED_ATTRIBUTES
+from custom_components.luxtronik2.entity import UNRECORDED_ATTRIBUTES
 
 from .conftest import SERIAL
 

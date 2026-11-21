@@ -7,7 +7,7 @@ from luxtronik.calculations import Calculations
 from luxtronik.parameters import Parameters
 from luxtronik.visibilities import Visibilities
 
-from custom_components.luxtronik.luxtronik_device import LuxtronikDevice
+from custom_components.luxtronik2.luxtronik_device import LuxtronikDevice
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def test_read_lock_timeout(device):
 
 def test_connect_reads_once():
     """Creating the device reads the heatpump once, in the library client."""
-    with patch("custom_components.luxtronik.luxtronik_device.Lux") as lux:
+    with patch("custom_components.luxtronik2.luxtronik_device.Lux") as lux:
         LuxtronikDevice("10.0.0.2", 8889, True, 30)
 
     lux.assert_called_once_with("10.0.0.2", 8889, True)
@@ -42,7 +42,7 @@ def test_connect_reads_once():
 
 def test_connect_for_migration():
     """The migration connects without safe mode and with the default lock timeout."""
-    with patch("custom_components.luxtronik.luxtronik_device.Lux") as lux:
+    with patch("custom_components.luxtronik2.luxtronik_device.Lux") as lux:
         device = LuxtronikDevice.connect("10.0.0.2", 8889)
 
     lux.assert_called_once_with("10.0.0.2", 8889, False)

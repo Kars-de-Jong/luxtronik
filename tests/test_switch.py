@@ -5,7 +5,7 @@ from homeassistant.const import (ATTR_ENTITY_ID, ATTR_ICON, CONF_HOST, CONF_PORT
                                  SERVICE_TURN_OFF, STATE_OFF, STATE_ON)
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,
                                               LUX_SENSOR_MODE_HEATING)
 

@@ -7,8 +7,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.luxtronik import async_migrate_entry
-from custom_components.luxtronik.const import (CONF_HA_SENSOR_INDOOR_TEMPERATURE, CONF_LOCK_TIMEOUT,
+from custom_components.luxtronik2 import async_migrate_entry
+from custom_components.luxtronik2.const import (CONF_HA_SENSOR_INDOOR_TEMPERATURE, CONF_LOCK_TIMEOUT,
                                                CONF_SAFE, DOMAIN)
 
 SERIAL = "2311_1234_abcd"
@@ -22,7 +22,7 @@ async def test_migrate_v1(hass):
     luxtronik = MagicMock(
         unique_id=SERIAL, manufacturer="Alpha Innotec", model="LWD", serial_number="2311-1234")
 
-    with patch("custom_components.luxtronik.LuxtronikDevice.connect", return_value=luxtronik):
+    with patch("custom_components.luxtronik2.LuxtronikDevice.connect", return_value=luxtronik):
         assert await async_migrate_entry(hass, entry)
 
     assert (entry.version, entry.minor_version) == (3, 2)
@@ -46,7 +46,7 @@ async def test_migrate_v1_connects_in_executor(hass):
         return MagicMock(
             unique_id=SERIAL, manufacturer="Alpha Innotec", model="LWD", serial_number="2311-1234")
 
-    with patch("custom_components.luxtronik.LuxtronikDevice.connect", new=connect):
+    with patch("custom_components.luxtronik2.LuxtronikDevice.connect", new=connect):
         assert await async_migrate_entry(hass, entry)
 
     assert connected_in and loop_thread not in connected_in
@@ -58,7 +58,7 @@ async def test_migrate_v1_heatpump_unreachable(hass, caplog):
         domain=DOMAIN, version=1, data={CONF_HOST: "10.0.0.2", CONF_PORT: 8889})
     entry.add_to_hass(hass)
 
-    with patch("custom_components.luxtronik.LuxtronikDevice.connect", side_effect=OSError):
+    with patch("custom_components.luxtronik2.LuxtronikDevice.connect", side_effect=OSError):
         assert not await async_migrate_entry(hass, entry)
 
     assert entry.version == 1
@@ -80,7 +80,7 @@ async def test_migrate_v1_removes_legacy_devices(hass):
     luxtronik = MagicMock(
         unique_id=SERIAL, manufacturer="Alpha Innotec", model="LWD", serial_number="2311-1234")
 
-    with patch("custom_components.luxtronik.LuxtronikDevice.connect", return_value=luxtronik):
+    with patch("custom_components.luxtronik2.LuxtronikDevice.connect", return_value=luxtronik):
         assert await async_migrate_entry(hass, entry)
 
     devices = dr.async_entries_for_config_entry(dev_reg, entry.entry_id)

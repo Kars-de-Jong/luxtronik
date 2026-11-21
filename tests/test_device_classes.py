@@ -3,7 +3,7 @@ from homeassistant.components.switch import SwitchDeviceClass
 from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_UNIT_OF_MEASUREMENT, CONF_HOST, CONF_PORT
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN)
 from homeassistant.helpers import entity_registry as er
 

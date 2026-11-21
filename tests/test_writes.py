@@ -18,13 +18,13 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.luxtronik.const import (ATTR_PARAMETER, ATTR_VALUE, CONF_LOCK_TIMEOUT,
+from custom_components.luxtronik2.const import (ATTR_PARAMETER, ATTR_VALUE, CONF_LOCK_TIMEOUT,
                                               CONF_SAFE, CONF_UPDATE_IMMEDIATELY_AFTER_WRITE,
                                               DOMAIN, SERVICE_WRITE,
                                               LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE,
                                               LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE_2,
                                               LUX_SENSOR_REMOTE_MAINTENANCE)
-from custom_components.luxtronik.coordinator import LuxtronikCoordinator
+from custom_components.luxtronik2.coordinator import LuxtronikCoordinator
 from .conftest import MODE_SENSORS, SERIAL
 
 REMOTE_MAINTENANCE = "switch.heatpump_2311_1234_remote_maintenance"
@@ -209,7 +209,7 @@ def other_luxtronik(luxtronik):
     other.get_value.side_effect = lambda key: "Automatic" if key in MODE_SENSORS else 1
     other.detect_cooling_target_temperature_sensor.return_value = None
     other.write.return_value = True
-    with patch("custom_components.luxtronik.LuxtronikDevice", side_effect=[luxtronik, other]):
+    with patch("custom_components.luxtronik2.LuxtronikDevice", side_effect=[luxtronik, other]):
         yield other
 
 

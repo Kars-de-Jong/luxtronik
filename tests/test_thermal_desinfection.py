@@ -8,9 +8,9 @@ from homeassistant.core import State
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import mock_restore_cache
 
-from custom_components.luxtronik.const import (ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION,
+from custom_components.luxtronik2.const import (ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION,
                                               LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE)
-from custom_components.luxtronik.number import LuxtronikNumberThermalDesinfection
+from custom_components.luxtronik2.number import LuxtronikNumberThermalDesinfection
 
 TARGET_KEY = "parameters.ID_Einst_LGST_akt"
 ENTITY_ID = "number.thermal_desinfection"

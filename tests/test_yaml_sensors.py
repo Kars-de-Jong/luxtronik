@@ -5,8 +5,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.luxtronik import _async_sync_yaml_sensors
-from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2 import _async_sync_yaml_sensors
+from custom_components.luxtronik2.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN)
 
 SERIAL = "2311_1234_abcd"

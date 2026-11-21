@@ -6,7 +6,7 @@ from homeassistant.helpers.dispatcher import DATA_DISPATCHER
 from pytest_homeassistant.common import (MockConfigEntry,
                                                           mock_restore_cache)
 
-from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN)
 
 SERIAL = "2311_1234_abcd"

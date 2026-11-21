@@ -6,9 +6,9 @@ import pytest
 from homeassistant.const import CONF_HOST, CONF_PORT
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN)
-from custom_components.luxtronik.luxtronik_device import LuxtronikDevice
+from custom_components.luxtronik2.luxtronik_device import LuxtronikDevice
 
 from .conftest import SERIAL
 

@@ -11,10 +11,10 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,
                                               DOWNLOAD_PORTAL_URL)
-from custom_components.luxtronik.update import LuxtronikUpdateEntity
+from custom_components.luxtronik2.update import LuxtronikUpdateEntity
 
 from .conftest import MODE_SENSORS, SERIAL
 
@@ -171,6 +171,6 @@ async def test_portal_error_logged_once(hass, luxtronik, installed, aioclient_mo
 
 def test_no_requests_or_threads():
     """The update platform uses the aiohttp session of Home Assistant."""
-    from custom_components.luxtronik import update
+    from custom_components.luxtronik2 import update
     assert not hasattr(update, "requests")
     assert not hasattr(update, "threading")

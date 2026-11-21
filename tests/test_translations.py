@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
-from custom_components.luxtronik.config_flow import (LuxtronikFlowHandler,
+from custom_components.luxtronik2.config_flow import (LuxtronikFlowHandler,
                                                     LuxtronikOptionsFlowHandler)
 
-COMPONENT = Path(__file__).parent.parent / "custom_components" / "luxtronik"
+COMPONENT = Path(__file__).parent.parent / "custom_components" / "luxtronik2"
 TRANSLATIONS = ["translations/en.json", "translations/de.json"]
 # The state keys that hassfest accepts.
 STATE_KEY = re.compile(r"^(?!.+[_-]{2})(?![_-])[a-z0-9-_]+(?<![_-])$")

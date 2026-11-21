@@ -8,10 +8,10 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN)
-from custom_components.luxtronik.coordinator import LuxtronikCoordinator
-from custom_components.luxtronik.update import LuxtronikUpdateEntity
+from custom_components.luxtronik2.coordinator import LuxtronikCoordinator
+from custom_components.luxtronik2.update import LuxtronikUpdateEntity
 from .conftest import SERIAL
 
 # One entity of every platform that follows the heatpump data.

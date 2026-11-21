@@ -9,7 +9,7 @@ from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import MockConfigEntry, mock_restore_cache
 
-from custom_components.luxtronik.const import (ATTR_STATUS_TEXT, CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2.const import (ATTR_STATUS_TEXT, CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,
                                               LUX_BINARY_SENSOR_ADDITIONAL_CIRCULATION_PUMP,
                                               LUX_SENSOR_MODE_COOLING, LUX_SENSOR_STATUS,

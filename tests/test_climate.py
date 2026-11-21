@@ -13,8 +13,8 @@ from homeassistant.const import (ATTR_ENTITY_ID, ATTR_ICON, ATTR_TEMPERATURE, CO
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.luxtronik import climate
-from custom_components.luxtronik.const import (
+from custom_components.luxtronik2 import climate
+from custom_components.luxtronik2.const import (
     CONF_CONTROL_MODE_HOME_ASSISTANT, CONF_HA_SENSOR_INDOOR_TEMPERATURE, CONF_LOCK_TIMEOUT,
     CONF_SAFE, CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,
     LUX_BINARY_SENSOR_CIRCULATION_PUMP_HEATING,

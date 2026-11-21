@@ -10,7 +10,7 @@ from homeassistant.helpers.selector import EntitySelector
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.luxtronik.const import (
+from custom_components.luxtronik2.const import (
     CONF_CONTROL_MODE_HOME_ASSISTANT,
     CONF_HA_SENSOR_INDOOR_TEMPERATURE,
     CONF_LOCK_TIMEOUT,
@@ -78,8 +78,8 @@ def device():
 @pytest.fixture
 def mock_connect():
     """Patch the connection test of the config flow."""
-    with patch("custom_components.luxtronik.config_flow.LuxtronikDevice.connect") as connect, \
-            patch("custom_components.luxtronik.async_setup_entry", return_value=True):
+    with patch("custom_components.luxtronik2.config_flow.LuxtronikDevice.connect") as connect, \
+            patch("custom_components.luxtronik2.async_setup_entry", return_value=True):
         yield connect
 
 
@@ -171,7 +171,7 @@ async def test_user_flow_unknown_error(hass, mock_connect):
 
 async def test_dhcp_flow_aborts_for_other_device(hass, mock_connect):
     """A DHCP discovery that is not confirmed by the broadcast aborts."""
-    with patch("custom_components.luxtronik.config_flow.discover", return_value=("192.168.1.99", PORT)):
+    with patch("custom_components.luxtronik2.config_flow.discover", return_value=("192.168.1.99", PORT)):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_DHCP}, data=DHCP_DISCOVERY)
 
@@ -183,7 +183,7 @@ async def test_dhcp_flow_aborts_for_other_device(hass, mock_connect):
 async def test_dhcp_flow_aborts_when_unreachable(hass, mock_connect):
     """A DHCP discovery aborts when the heatpump cannot be reached."""
     mock_connect.side_effect = OSError
-    with patch("custom_components.luxtronik.config_flow.discover", return_value=(HOST, PORT)):
+    with patch("custom_components.luxtronik2.config_flow.discover", return_value=(HOST, PORT)):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_DHCP}, data=DHCP_DISCOVERY)
 
@@ -194,7 +194,7 @@ async def test_dhcp_flow_aborts_when_unreachable(hass, mock_connect):
 async def test_dhcp_flow_creates_entry(hass, mock_connect, device):
     """A confirmed DHCP discovery prefills the user form and creates an entry."""
     mock_connect.return_value = device
-    with patch("custom_components.luxtronik.config_flow.discover", return_value=(HOST, PORT)):
+    with patch("custom_components.luxtronik2.config_flow.discover", return_value=(HOST, PORT)):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_DHCP}, data=DHCP_DISCOVERY)
 
@@ -214,7 +214,7 @@ async def test_dhcp_flow_creates_entry(hass, mock_connect, device):
 async def test_dhcp_flow_uses_default_port(hass, mock_connect, device):
     """The default port is used when the broadcast answer has no port."""
     mock_connect.return_value = device
-    with patch("custom_components.luxtronik.config_flow.discover", return_value=(HOST, None)):
+    with patch("custom_components.luxtronik2.config_flow.discover", return_value=(HOST, None)):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_DHCP}, data=DHCP_DISCOVERY)
 
@@ -227,7 +227,7 @@ async def test_dhcp_flow_aborts_when_unique_id_configured(hass, mock_connect, de
     """A discovered heatpump that is already configured aborts."""
     MockConfigEntry(domain=DOMAIN, version=3, unique_id=SERIAL, data=ENTRY_DATA).add_to_hass(hass)
     mock_connect.return_value = device
-    with patch("custom_components.luxtronik.config_flow.discover", return_value=(HOST, PORT)):
+    with patch("custom_components.luxtronik2.config_flow.discover", return_value=(HOST, PORT)):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_DHCP}, data=DHCP_DISCOVERY)
 
@@ -302,7 +302,7 @@ async def test_options_flow_keeps_yaml_sensors(hass):
 
 async def test_dhcp_flow_aborts_when_broadcast_finds_nothing(hass, mock_connect):
     """A DHCP discovery aborts when no heatpump answers the broadcast."""
-    with patch("custom_components.luxtronik.config_flow.discover", return_value=None):
+    with patch("custom_components.luxtronik2.config_flow.discover", return_value=None):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_DHCP}, data=DHCP_DISCOVERY)
 

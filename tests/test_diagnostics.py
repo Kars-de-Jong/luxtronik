@@ -7,8 +7,8 @@ from homeassistant.components.diagnostics import REDACTED
 from homeassistant.const import CONF_HOST, CONF_PORT
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.luxtronik.const import DOMAIN
-from custom_components.luxtronik.diagnostics import async_get_config_entry_diagnostics
+from custom_components.luxtronik2.const import DOMAIN
+from custom_components.luxtronik2.diagnostics import async_get_config_entry_diagnostics
 
 from .conftest import SERIAL
 
@@ -43,8 +43,8 @@ async def test_diagnostics(hass):
         data={CONF_HOST: "10.0.0.2", CONF_PORT: 8889})
     entry.add_to_hass(hass)
 
-    with patch("custom_components.luxtronik.diagnostics.Lux", new=create_client), \
-            patch("custom_components.luxtronik.diagnostics.get_mac_address", return_value=None):
+    with patch("custom_components.luxtronik2.diagnostics.Lux", new=create_client), \
+            patch("custom_components.luxtronik2.diagnostics.get_mac_address", return_value=None):
         diag = await async_get_config_entry_diagnostics(hass, entry)
 
     assert created_in and loop_thread not in created_in
@@ -68,8 +68,8 @@ async def test_diagnostics_mac_vendor(hass, host, lookup):
         domain=DOMAIN, version=3, unique_id=SERIAL, data={CONF_HOST: host, CONF_PORT: 8889})
     entry.add_to_hass(hass)
 
-    with patch("custom_components.luxtronik.diagnostics.Lux", return_value=_client()), \
-            patch("custom_components.luxtronik.diagnostics.get_mac_address",
+    with patch("custom_components.luxtronik2.diagnostics.Lux", return_value=_client()), \
+            patch("custom_components.luxtronik2.diagnostics.get_mac_address",
                   return_value="AA-BB-CC-DD-EE-FF") as get_mac_address:
         diag = await async_get_config_entry_diagnostics(hass, entry)
 

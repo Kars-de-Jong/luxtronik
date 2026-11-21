@@ -65,8 +65,9 @@ Continue with [Adding Luxtronik](#3-adding-luxtronik).
 
 1. Download the latest release of this integration from the [releases page](https://github.com/Kars-de-Jong/luxtronik/releases).
 2. In your Home Assistant configuration directory, create the folder `config/custom_components` if it does not exist yet.
-3. Copy the folder `custom_components/luxtronik` from the release into it, so you end up with `config/custom_components/luxtronik` (containing `manifest.json`).
-4. Restart Home Assistant.
+3. Copy the folder `custom_components/luxtronik2` from the release into it, so you end up with `config/custom_components/luxtronik2` (containing `manifest.json`).
+4. If you previously installed the integration manually into `config/custom_components/luxtronik`, delete that folder. Two folders with the same domain conflict. HACS installs already use `luxtronik2`, so nothing changes for them.
+5. Restart Home Assistant.
 
 Continue with [Adding Luxtronik](#3-adding-luxtronik).
 
@@ -315,7 +316,7 @@ All parameters can be configured as sensors and read that way (see [Additional s
 3. If you added [additional sensors](#42-additional-sensors-advanced), remove the `sensor` and `binary_sensor` entries with `platform: luxtronik2` from your `configuration.yaml`.
 4. Remove the files:
    - HACS: go to `HACS`, open the menu (three dots) next to `Luxtronik` and choose `Remove`.
-   - Manual: delete the folder `config/custom_components/luxtronik`.
+   - Manual: delete the folder `config/custom_components/luxtronik2` (and the old folder `config/custom_components/luxtronik` if it is still there).
 5. Restart Home Assistant (`Settings -> System -> Restart`).
 
 Optionally, remove the custom repository from HACS: select `Custom repositories` from the menu (three dots) in the top right and delete `https://github.com/Kars-de-Jong/luxtronik`.

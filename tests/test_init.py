@@ -14,10 +14,10 @@ from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
+from custom_components.luxtronik2.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,
                                               SERVICE_WRITE)
-from custom_components.luxtronik.helpers import helper
+from custom_components.luxtronik2.helpers import helper
 
 async def test_async_setup(hass):
     """Test the component gets setup."""
@@ -32,7 +32,7 @@ async def test_setup_entry_not_ready(hass):
               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE: True})
     entry.add_to_hass(hass)
 
-    with patch("custom_components.luxtronik.LuxtronikDevice", side_effect=OSError):
+    with patch("custom_components.luxtronik2.LuxtronikDevice", side_effect=OSError):
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -41,7 +41,7 @@ async def test_setup_entry_not_ready(hass):
 
 async def test_async_setup_ignores_yaml_connection(hass):
     """The heatpump connection can only be configured from the UI."""
-    with patch("custom_components.luxtronik.LuxtronikDevice") as device:
+    with patch("custom_components.luxtronik2.LuxtronikDevice") as device:
         assert await async_setup_component(
             hass, DOMAIN, {DOMAIN: {CONF_HOST: "10.0.0.2", CONF_PORT: 8889}}) is True
     device.assert_not_called()
@@ -161,7 +161,7 @@ async def test_texts_are_not_loaded_in_event_loop(hass, luxtronik, language):
 
 def test_library_log_level_is_not_changed():
     """The log level of the luxtronik library is left to the logger configuration."""
-    import custom_components.luxtronik  # noqa: F401
+    import custom_components.luxtronik2  # noqa: F401
     from luxtronik import LOGGER as library_logger
     assert library_logger.level == logging.NOTSET
 

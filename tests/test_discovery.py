@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from custom_components.luxtronik.helpers import lux_helper
+from custom_components.luxtronik2.helpers import lux_helper
 
 REQUEST = b"2000;111;1;\x00"
 
