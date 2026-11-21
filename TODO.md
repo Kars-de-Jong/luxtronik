@@ -41,7 +41,6 @@ Conventions from the Bronze work:
 
 ### 4. hassfest errors
 Running hassfest (see Conventions) currently reports:
-- **`manifest.json` has a `homeassistant` key.** Not a valid manifest option; the minimum version belongs in `hacs.json` only, which already has it. Remove it from the manifest.
 - **Domain does not match the directory name.** The domain is `luxtronik2`, the directory is `luxtronik`. Renaming either one is a breaking change (entity IDs, config entries, the `luxtronik2.write` action, YAML config), inherited from upstream. Decide whether to fix it with a migration or accept this error.
 - **Invalid translation key `-1`** in `entity.sensor.switchoff_reason.state` in `strings.json` and `translations/en.json`. State keys must match `[a-z0-9-_]+` and can't start with a hyphen. Map the value `-1` to a valid key (e.g. `unknown`) in the sensor, then rename the translation key.
 
