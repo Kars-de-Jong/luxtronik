@@ -9,7 +9,7 @@ Conventions from the Bronze work:
 - **Write the failing test first.** Run tests with `.venv/bin/pytest` and lint with `.venv/bin/flake8 . --count --select=E9,F63,F7,F82 --exclude=.venv`.
 - **Use the shared test fixtures.** `tests/conftest.py` has a `luxtronik` fixture: a MagicMock device patched over `custom_components.luxtronik.LuxtronikDevice`.
 - **Update `quality_scale.yaml`** when a fix completes a quality scale rule.
-- **Validate with hassfest** after changes to `manifest.json`, `strings.json`, `translations/`, `services.yaml` or `quality_scale.yaml`: `docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest` from the repository root. This is the image the `home-assistant/actions/hassfest` GitHub Action uses. It currently reports the errors listed in item 4; a fix must not add new ones.
+- **Validate with hassfest** after changes to `manifest.json`, `strings.json`, `translations/`, `services.yaml` or `quality_scale.yaml`: `docker run --rm -v "$PWD":/github/workspace ghcr.io/home-assistant/hassfest` from the repository root. This is the image the `home-assistant/actions/hassfest` GitHub Action uses, which runs in the `validate-hassfest` job of `.github/workflows/validate.yaml`. It currently reports the errors listed in item 4, so that job fails; a fix must not add new ones.
 
 ## Improvements
 
@@ -37,10 +37,9 @@ Conventions from the Bronze work:
 - The tests trigger flake8 E128 warnings (continuation indent of the import blocks), and there is one E302 in `tests/test_init.py`. CI only fails on E9/F63/F7/F82.
 - `setup.cfg` sets `max-line-length = 88` but ignores E501.
 - `tests/test_entity_naming.py` defines its own `SERIAL` while `tests/conftest.py` also has one.
-- Consider adding the `home-assistant/actions/hassfest` GitHub Action to `.github/workflows/validate.yaml` to validate `manifest.json` and `quality_scale.yaml`. Fix the errors in item 4 first, or the job fails.
 
 ### 4. hassfest errors
-Running hassfest (see Conventions) currently reports:
+Running hassfest (see Conventions) currently reports the errors below. Until they are fixed or accepted, the `validate-hassfest` CI job fails.
 - **Domain does not match the directory name.** The domain is `luxtronik2`, the directory is `luxtronik`. Renaming either one is a breaking change (entity IDs, config entries, the `luxtronik2.write` action, YAML config), inherited from upstream. Decide whether to fix it with a migration or accept this error.
 - **Invalid translation key `-1`** in `entity.sensor.switchoff_reason.state` in `strings.json` and `translations/en.json`. State keys must match `[a-z0-9-_]+` and can't start with a hyphen. Map the value `-1` to a valid key (e.g. `unknown`) in the sensor, then rename the translation key.
 
