@@ -111,10 +111,10 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
     _key: str = None
     _active = False
 
-    _attr_target_temperature = None
-    _attr_current_temperature = None
+    _attr_native_target_temperature = None
+    _attr_native_current_temperature = None
     _attr_supported_features = SUPPORT_FLAGS
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_hvac_mode = HVACMode.OFF
     _attr_hvac_modes = OPERATION_LIST
     _attr_hvac_action = HVACAction.IDLE
@@ -146,24 +146,24 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
 
     # region Temperatures
     @property
-    def current_temperature(self) -> float:
+    def native_current_temperature(self) -> float:
         """Return the current temperature."""
         if self._current_temperature_sensor is None:
-            self._attr_current_temperature = None
+            self._attr_native_current_temperature = None
         elif self.__is_luxtronik_sensor(self._current_temperature_sensor):
-            self._attr_current_temperature = self._luxtronik.get_value(
+            self._attr_native_current_temperature = self._luxtronik.get_value(
                 self._current_temperature_sensor)
         else:
-            self._attr_current_temperature = self.__get_state_temperature(
+            self._attr_native_current_temperature = self.__get_state_temperature(
                 self._current_temperature_sensor)
-        return self._attr_current_temperature
+        return self._attr_native_current_temperature
 
     @property
-    def target_temperature(self) -> float:
+    def native_target_temperature(self) -> float:
         """Return the temperature we try to reach."""
-        self._attr_target_temperature = self._luxtronik.get_value(
+        self._attr_native_target_temperature = self._luxtronik.get_value(
             self._target_temperature_sensor)
-        return self._attr_target_temperature
+        return self._attr_native_target_temperature
 
     def __get_state_temperature(self, entity_id: str) -> float | None:
         """Return the temperature of an entity, or None when its state is not a number."""
@@ -182,7 +182,7 @@ class LuxtronikThermostat(LuxtronikEntity, ClimateEntity, RestoreEntity):
         """Set new target temperature."""
         # Writing updates the entities, which reads the target temperature again.
         temperature = kwargs[ATTR_TEMPERATURE]
-        self._attr_target_temperature = temperature
+        self._attr_native_target_temperature = temperature
         if self._target_temperature_parameter_2 is not None:
             await self.coordinator.async_write(
                 self._target_temperature_parameter_2.split('.')[1], temperature)
@@ -328,7 +328,7 @@ class LuxtronikDomesticWaterThermostat(LuxtronikThermostat):
 class LuxtronikHeatingThermostat(LuxtronikThermostat):
     _key: Final = 'heating'
 
-    # _attr_target_temperature = 20.5
+    # _attr_native_target_temperature = 20.5
     _attr_target_temperature_step = 0.1
     _attr_min_temp = -5.0
     _attr_max_temp = +5.0

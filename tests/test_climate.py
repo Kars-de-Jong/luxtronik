@@ -1,4 +1,6 @@
 """Test the climate platform setup."""
+import importlib
+
 import pytest
 from homeassistant.components.climate import (ATTR_CURRENT_TEMPERATURE, ATTR_HVAC_ACTION,
                                               ATTR_HVAC_MODE, ATTR_PRESET_MODE,
@@ -11,6 +13,7 @@ from homeassistant.const import (ATTR_ENTITY_ID, ATTR_ICON, ATTR_TEMPERATURE, CO
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.luxtronik import climate
 from custom_components.luxtronik.const import (
     CONF_CONTROL_MODE_HOME_ASSISTANT, CONF_HA_SENSOR_INDOOR_TEMPERATURE, CONF_LOCK_TIMEOUT,
     CONF_SAFE, CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,
@@ -197,6 +200,27 @@ async def test_set_heating_temperature(hass, values):
 
     assert values.get(LUX_SENSOR_HEATING_TARGET_CORRECTION) == 2.5
     assert hass.states.get(HEATING).attributes[ATTR_TEMPERATURE] == 2.5
+
+
+async def test_native_temperature_api(hass, values, caplog):
+    """The circuits provide the native temperatures, not the ones deprecated in 2026.11."""
+    values.update({
+        LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE: 48.0,
+        LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE: 45.5,
+    })
+    # Home Assistant reports the deprecated members when the classes are defined.
+    importlib.reload(climate)
+    await _setup(hass)
+
+    await hass.services.async_call(
+        CLIMATE_DOMAIN, SERVICE_SET_TEMPERATURE,
+        {ATTR_ENTITY_ID: DOMESTIC_WATER, ATTR_TEMPERATURE: 50.0}, blocking=True)
+
+    assert values.get(LUX_SENSOR_DOMESTIC_WATER_TARGET_TEMPERATURE) == 50.0
+    domestic_water = hass.states.get(DOMESTIC_WATER)
+    assert domestic_water.attributes[ATTR_TEMPERATURE] == 50.0
+    assert domestic_water.attributes[ATTR_CURRENT_TEMPERATURE] == 45.5
+    assert "deprecated" not in caplog.text
 
 
 @pytest.mark.parametrize(("entity_id", "mode_sensor", "hvac_mode", "written"), [
