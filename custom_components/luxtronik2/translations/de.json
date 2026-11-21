@@ -145,9 +145,6 @@
   },
   "entity": {
     "sensor": {
-      "status": {
-        "name": "Status"
-      },
       "status_time": {
         "name": "Status Zeit"
       },
