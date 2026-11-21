@@ -3,7 +3,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import DATA_DISPATCHER
-from pytest_homeassistant_custom_component.common import (MockConfigEntry,
+from pytest_homeassistant.common import (MockConfigEntry,
                                                           mock_restore_cache)
 
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,

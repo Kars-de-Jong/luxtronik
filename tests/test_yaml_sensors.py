@@ -3,7 +3,7 @@ from homeassistant.const import CONF_BINARY_SENSORS, CONF_HOST, CONF_PORT, CONF_
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.luxtronik import _async_sync_yaml_sensors
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,

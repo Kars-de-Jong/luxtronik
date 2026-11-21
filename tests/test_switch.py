@@ -3,7 +3,7 @@ import pytest
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.const import (ATTR_ENTITY_ID, ATTR_ICON, CONF_HOST, CONF_PORT,
                                  SERVICE_TURN_OFF, STATE_OFF, STATE_ON)
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,

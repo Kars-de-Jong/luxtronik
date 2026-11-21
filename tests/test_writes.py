@@ -16,7 +16,7 @@ from homeassistant.const import (ATTR_CONFIG_ENTRY_ID, ATTR_ENTITY_ID, ATTR_TEMP
                                  SERVICE_TURN_ON, STATE_OFF, STATE_ON)
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
+from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.luxtronik.const import (ATTR_PARAMETER, ATTR_VALUE, CONF_LOCK_TIMEOUT,
                                               CONF_SAFE, CONF_UPDATE_IMMEDIATELY_AFTER_WRITE,

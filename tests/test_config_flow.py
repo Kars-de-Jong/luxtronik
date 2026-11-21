@@ -8,7 +8,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SENSORS
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers.selector import EntitySelector
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.luxtronik.const import (
     CONF_CONTROL_MODE_HOME_ASSISTANT,

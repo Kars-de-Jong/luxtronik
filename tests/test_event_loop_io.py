@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from homeassistant.const import CONF_HOST, CONF_PORT
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.luxtronik.const import (CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN)

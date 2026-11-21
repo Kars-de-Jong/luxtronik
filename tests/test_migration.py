@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.luxtronik import async_migrate_entry
 from custom_components.luxtronik.const import (CONF_HA_SENSOR_INDOOR_TEMPERATURE, CONF_LOCK_TIMEOUT,

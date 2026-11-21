@@ -7,7 +7,7 @@ from homeassistant.core import State
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import MockConfigEntry, mock_restore_cache
+from pytest_homeassistant.common import MockConfigEntry, mock_restore_cache
 
 from custom_components.luxtronik.const import (ATTR_STATUS_TEXT, CONF_LOCK_TIMEOUT, CONF_SAFE,
                                               CONF_UPDATE_IMMEDIATELY_AFTER_WRITE, DOMAIN,

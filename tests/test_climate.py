@@ -9,7 +9,7 @@ from homeassistant.components.climate import (ATTR_CURRENT_TEMPERATURE, ATTR_HVA
 from homeassistant.const import (ATTR_ENTITY_ID, ATTR_ICON, ATTR_TEMPERATURE, CONF_HOST,
                                  CONF_PORT)
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.luxtronik.const import (
     CONF_CONTROL_MODE_HOME_ASSISTANT, CONF_HA_SENSOR_INDOOR_TEMPERATURE, CONF_LOCK_TIMEOUT,

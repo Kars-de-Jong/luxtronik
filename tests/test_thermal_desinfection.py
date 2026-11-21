@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from homeassistant.core import State
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import mock_restore_cache
+from pytest_homeassistant.common import mock_restore_cache
 
 from custom_components.luxtronik.const import (ATTR_EXTRA_STATE_ATTRIBUTE_LAST_THERMAL_DESINFECTION,
                                               LUX_SENSOR_DOMESTIC_WATER_CURRENT_TEMPERATURE)
